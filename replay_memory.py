@@ -52,3 +52,45 @@ class ReplayMemory:
       """
       # TODO: resetear lista de memoria y puntero de posición
       pass
+
+# class ReplayMemory:
+#     def __init__(self, capacity=4):
+#         """
+#         Inicializa la memoria de repetición con capacidad fija.
+#         """
+#         self.capacity = capacity
+#         self.memory = []
+#         self.position = 0  # Puntero circular
+
+#     def add(self, state, action, reward, done, next_state):
+#         """
+#         Agrega una transición a la memoria. Si está llena, sobrescribe la más antigua.
+#         """
+#         transition = Transition(state, action, reward, done, next_state)
+#         if len(self.memory) < self.capacity:
+#             self.memory.append(transition)
+#         else:
+#             self.memory[self.position] = transition
+#         self.position = (self.position + 1) % self.capacity
+
+#     def sample(self, batch_size=32):
+#         """
+#         Devuelve un batch aleatorio de transiciones.
+#         """
+#         if batch_size > len(self):
+#             raise ValueError("batch_size mayor que el número de elementos en memoria.")
+#         return random.sample(self.memory, batch_size)
+
+#     def __len__(self):
+#         """
+#         Devuelve la cantidad de transiciones almacenadas.
+#         """
+#         return len(self.memory)
+
+#     def clear(self):
+#         """
+#         Borra todas las transiciones de la memoria.
+#         """
+#         self.memory = []
+#         self.position = 0
+
