@@ -16,6 +16,9 @@ class ReplayMemory:
          - capacity (int): número máximo de transiciones a almacenar.
         """
         # TODO: almacenar capacity, inicializar lista de memoria y puntero de posición
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0  # Puntero circular
         pass
 
     def add(self, state, action, reward, done, next_state):
@@ -25,7 +28,12 @@ class ReplayMemory:
         """
         # TODO: crear Transition y agregar o reemplazar en la lista según capacity
         # TODO: actualizar puntero de posición circular
-        pass
+        transition = Transition(state, action, reward, done, next_state)
+        if len(self.memory) < self.capacity:
+            self.memory.append(transition)
+        else:
+            self.memory[self.position] = transition
+        self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size=32):
       """
@@ -37,60 +45,23 @@ class ReplayMemory:
       """
       # TODO: verificar que batch_size <= len(self)
       # TODO: retornar una muestra aleatoria de self.memory
-      pass
+      if batch_size > len(self):
+        raise ValueError("batch_size mayor que el número de elementos en memoria.")
+      return random.sample(self.memory, batch_size)
+
       
     def __len__(self):
       """
       Devuelve el número actual de transiciones en memoria.
       """
-      # TODO: retornar tamaño de la lista de memoria
-    pass
+      return len(self.memory)
     
     def clear(self):
       """
       Elimina todas las transiciones de la memoria.
       """
       # TODO: resetear lista de memoria y puntero de posición
-      pass
+      self.memory = []
+      self.position = 0
 
-# class ReplayMemory:
-#     def __init__(self, capacity=4):
-#         """
-#         Inicializa la memoria de repetición con capacidad fija.
-#         """
-#         self.capacity = capacity
-#         self.memory = []
-#         self.position = 0  # Puntero circular
-
-#     def add(self, state, action, reward, done, next_state):
-#         """
-#         Agrega una transición a la memoria. Si está llena, sobrescribe la más antigua.
-#         """
-#         transition = Transition(state, action, reward, done, next_state)
-#         if len(self.memory) < self.capacity:
-#             self.memory.append(transition)
-#         else:
-#             self.memory[self.position] = transition
-#         self.position = (self.position + 1) % self.capacity
-
-#     def sample(self, batch_size=32):
-#         """
-#         Devuelve un batch aleatorio de transiciones.
-#         """
-#         if batch_size > len(self):
-#             raise ValueError("batch_size mayor que el número de elementos en memoria.")
-#         return random.sample(self.memory, batch_size)
-
-#     def __len__(self):
-#         """
-#         Devuelve la cantidad de transiciones almacenadas.
-#         """
-#         return len(self.memory)
-
-#     def clear(self):
-#         """
-#         Borra todas las transiciones de la memoria.
-#         """
-#         self.memory = []
-#         self.position = 0
 

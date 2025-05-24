@@ -38,7 +38,19 @@ class DQN_CNN_Model(nn.Module):
         super(DQN_CNN_Model, self).__init__()
         # TODO: definir capas convolucionales basadas en obs_shape
         # TODO: definir capas lineales basadas en n_actions
-        pass
+        super(DQN_CNN_Model, self).__init__()
+        in_channels, h, w = obs_shape
+
+        # Capas convolucionales (igual que en el paper)
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=8, stride=4)
+        h, w = conv2d_output_shape((h, w), 8, stride=4)
+
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
+        h, w = conv2d_output_shape((h, w), 4, stride=2)
+
+        # Capas completamente conectadas
+        self.fc1 = nn.Linear(32 * h * w, 256)
+        self.fc2 = nn.Linear(256, n_actions)
         
 
     def forward(self, obs):
@@ -46,4 +58,16 @@ class DQN_CNN_Model(nn.Module):
         #       2) aplanar la salida
         #       3) aplicar capas lineales
         #       4) devolver tensor de Q-values de tamaño (batch, n_actions)
-        pass
+
+        # obs shape: (batch_size, 4, 84, 84)
+        x = self.conv1(obs)
+        print(x)
+        x = F.relu(x)
+
+        x = self.conv2(x)
+        # result shape
+        x = F.relu(x)
+
+        x = x.view(x.size(0), -1)  # Aplanar
+        x = F.relu(self.fc1(x))
+        return self.fc2(x)
