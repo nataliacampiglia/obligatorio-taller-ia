@@ -36,37 +36,40 @@ def conv2d_output_shape(
 class DQN_CNN_Model(nn.Module):
     def __init__(self,  obs_shape, n_actions):
         super(DQN_CNN_Model, self).__init__()
-        # TODO: definir capas convolucionales basadas en obs_shape
-        # TODO: definir capas lineales basadas en n_actions
-        in_channels, h, w = obs_shape
+        # obs_shape = (C, H, W), típicamente C=4 (frames stack), H=W=84
+        c, h, w = obs_shape
 
-        # Capas convolucionales (igual que en el paper)
-        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=8, stride=4)
-        h, w = conv2d_output_shape((h, w), 8, stride=4)
-
+        # Capas convolucionales según el paper
+        self.conv1 = nn.Conv2d(c, 16, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
-        h, w = conv2d_output_shape((h, w), 4, stride=2)
 
-        # Capas completamente conectadas
-        self.fc1 = nn.Linear(32 * h * w, 256)
-        self.fc2 = nn.Linear(256, n_actions)
+        # Calculamos dinámicamente la salida de las convs para la capa fc
+        h1, w1 = conv2d_output_shape((h, w), kernel_size=8, stride=4)
+        print(f"conv1 output shape: {h1}x{w1}")
+        h2, w2 = conv2d_output_shape((h1, w1), kernel_size=4, stride=2)
+        print(f"conv2 output shape: {h2}x{w2}")
+        conv_out_size = h2 * w2 * 32
+
+        # Capa fully-connected intermedia
+        self.fc = nn.Linear(conv_out_size, 256)
+        # Capa de salida para Q-values
+        self.out = nn.Linear(256, n_actions)
+        print(f"conv_out_size: {conv_out_size}, fc output size: 256, n_actions: {n_actions}")
+        print(self.out)
         
 
     def forward(self, obs):
-        # TODO: 1) aplicar convoluciones y activaciones
-        #       2) aplanar la salida
-        #       3) aplicar capas lineales
-        #       4) devolver tensor de Q-values de tamaño (batch, n_actions)
-
-        # obs shape: (batch_size, 4, 84, 84)
-        x = self.conv1(obs)
-        print(x)
-        x = F.relu(x)
-
-        x = self.conv2(x)
-        # result shape
-        x = F.relu(x)
-
-        x = x.view(x.size(0), -1)  # Aplanar
-        x = F.relu(self.fc1(x))
-        return self.fc2(x)
+        """
+        Forward pass:
+          1) ReLU(conv1)
+          2) ReLU(conv2)
+          3) Aplanar
+          4) ReLU(fc)
+          5) out Q-values
+        """
+        x = F.relu(self.conv1(obs))
+        x = F.relu(self.conv2(x))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc(x))
+        q_vals = self.out(x)
+        return q_vals 
