@@ -38,7 +38,6 @@ class DQN_CNN_Model(nn.Module):
         super(DQN_CNN_Model, self).__init__()
         # TODO: definir capas convolucionales basadas en obs_shape
         # TODO: definir capas lineales basadas en n_actions
-        super(DQN_CNN_Model, self).__init__()
         in_channels, h, w = obs_shape
 
         # Capas convolucionales (igual que en el paper)

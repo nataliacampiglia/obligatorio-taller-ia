@@ -56,15 +56,33 @@ class Agent(ABC):
 
         # Bucle principal de pasos dentro de un episodio
         for _ in range(max_steps):
-            # TODO: Seleccionar acción epsilon-greedy usando select_action()
-            # TODO: Ejecutar action = env.step(action)
-            # TODO: Procesar next_state con state_processing_function
-            # TODO: Acumular reward y actualizar total_steps, current_episode_steps
-            # TODO: Almacenar transición en replay memory
-            # TODO: Llamar a update_weights() para entrenar modelo
-            # TODO: Actualizar state y state_phi al siguiente estado
-            # TODO: Comprobar condición de done o límite de pasos de episodio y break
-            pass
+            # Seleccionar acción epsilon-greedy usando select_action()
+            action = self.select_action(state_phi, total_steps, train=True)
+
+            # Ejecutar action = env.step(action)
+            next_state, reward, done, _, _, = self.env.step(action)
+
+            # Procesar next_state con state_processing_function
+            next_state_phi = self.state_processing_function(next_state)
+
+            # Acumular reward y actualizar total_steps, current_episode_steps
+            current_episode_reward += reward
+            total_steps += 1
+            current_episode_steps += 1
+
+            # Almacenar transición en replay memory
+            self.memory.add(state_phi, action, reward, done, next_state_phi)
+
+            # Llamar a update_weights() para entrenar modelo
+            self.update_weights()
+
+            # Actualizar state y state_phi al siguiente estado
+            state = next_state
+            state_phi = next_state_phi
+
+            # Comprobar condición de done o límite de pasos de episodio y break
+            if done or current_episode_steps >= max_steps_episode:
+                break
         
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
@@ -98,9 +116,11 @@ class Agent(ABC):
             state, _ = env.reset()
             done = False
             while not done:
-                # TODO: seleccionar acción sin exploración
-                # TODO: ejecutar acción y actualizar estado
-                pass
+                # seleccionar acción sin exploración
+                action = self.select_action(state, current_steps=0, train=False)
+                 #  ejecutar acción y actualizar estado
+                next_state, _, done, _, = env.step(action)
+                state = next_state
 
     @abstractmethod
     def select_action(self, state, current_steps, train=True):
