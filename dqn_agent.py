@@ -39,12 +39,18 @@ class DQNAgent(Agent):
       if random.random() < epsilon:
           return self.env.action_space.sample()
       else:
-          state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)  # (1, C, H, W)
+          state_tensor = state.unsqueeze(0).to(self.device)  # (1, C, H, W)
           with torch.no_grad():
               q_values = self.policy_net(state_tensor)
-          return q_values.argmax(dim=1).item()
+          best_Action = q_values.argmax(dim=1).item()
+          print(f"{ best_Action = }")
+          return best_Action
 
     def update_weights(self):
+      # import gc
+      # gc.collect()
+      # if torch.backends.mps.is_available():
+      #       torch.mps.empty_cache()
       # 1) Comprobar que hay al menos batch_size muestras en memoria
     
       if len(self.memory) < self.batch_size:
@@ -55,9 +61,9 @@ class DQNAgent(Agent):
       batch = Transition(*zip(*transitions))
       states = torch.stack(batch.state).to(self.device)
       
-      print(f"{ states.dtype = }")
-      print(f"{ states.shape = }")
-      print(f"{ states.size() = }")
+      # print(f"{ states.dtype = }")
+      # print(f"{ states.shape = }")
+      # print(f"{ states.size() = }")
       # states = torch.FloatTensor(np.array(batch.state)).to(self.device)
       actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
       rewards = torch.FloatTensor(batch.reward).unsqueeze(1).to(self.device)
@@ -73,7 +79,8 @@ class DQNAgent(Agent):
       with torch.no_grad():
           max_q_next_state = self.policy_net(next_states).max(dim=1)[0] * (1 - dones)
           # 5) Calcular target = rewards + gamma * max_q_next_state
-          q_target = rewards + self.gamma * max_q_next_state * (1 - dones)
+          # q_target = rewards + self.gamma * max_q_next_state * (1 - dones)
+          q_target = rewards + self.gamma * max_q_next_state
 
 			 # 6) Computar loss MSE entre q_current y target, backprop y optimizer.step()
       loss = self.loss_fn(q_current, q_target)

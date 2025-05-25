@@ -60,7 +60,6 @@ class DQN_CNN_Model(nn.Module):
 
         # obs shape: (batch_size, 4, 84, 84)
         x = self.conv1(obs)
-        print(x)
         x = F.relu(x)
 
         x = self.conv2(x)
