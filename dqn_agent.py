@@ -53,14 +53,17 @@ class DQNAgent(Agent):
       # 2) Muestrear minibatch y convertir a tensores (states, actions, rewards, dones, next_states)
       transitions = self.memory.sample(self.batch_size)
       batch = Transition(*zip(*transitions))
+      states = torch.stack(batch.state).to(self.device)
       
-      states = batch.state
+      print(f"{ states.dtype = }")
+      print(f"{ states.shape = }")
+      print(f"{ states.size() = }")
       # states = torch.FloatTensor(np.array(batch.state)).to(self.device)
       actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
       rewards = torch.FloatTensor(batch.reward).unsqueeze(1).to(self.device)
       dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
+      next_states = torch.stack(batch.next_state).to(self.device)
       # next_states = torch.FloatTensor(batch.next_state).to(self.device)
-      next_states = batch.next_state
 
       # 3) Calcular q_current con policy_net(states).gather(...)
       q_current = self.policy_net(states).gather(1, actions)
