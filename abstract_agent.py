@@ -43,9 +43,7 @@ class Agent(ABC):
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
 
       for ep in pbar:
-        if total_steps > max_steps:
-            print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
-            break    
+
         # Observar estado inicial como indica el algoritmo
         state, _ = self.env.reset()
         state_phi = self.state_processing_function(state)
@@ -59,8 +57,8 @@ class Agent(ABC):
             action = self.select_action(state_phi, total_steps, train=True)
 
             # Ejecutar action = env.step(action)
-            next_state, reward, done, _, _, = self.env.step(action)
-
+            next_state, reward, terminated, truncated, _, = self.env.step(action)
+            done = terminated or truncated
             # Procesar next_state con state_processing_function
             next_state_phi = self.state_processing_function(next_state)
 
@@ -80,10 +78,15 @@ class Agent(ABC):
             state_phi = next_state_phi
 
             # Comprobar condición de done o límite de pasos de episodio y break
-            if done or current_episode_steps >= max_steps_episode:
+
+            if done:
+                break
+            if current_episode_steps >= max_steps_episode:
                 print(f"Se alcanzo {current_episode_steps} pasos en un mismo episodio.")
                 break
-        
+            if total_steps > max_steps:
+                print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
+                break    
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
         metrics["reward"] = np.mean(rewards[-self.episode_block:])
