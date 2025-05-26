@@ -81,6 +81,7 @@ class Agent(ABC):
 
             # Comprobar condición de done o límite de pasos de episodio y break
             if done or current_episode_steps >= max_steps_episode:
+                print(f"Se alcanzo {current_episode_steps} pasos en un mismo episodio.")
                 break
         
         # Registro de métricas y progreso
