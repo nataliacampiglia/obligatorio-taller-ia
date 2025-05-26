@@ -7,7 +7,6 @@ from tqdm import tqdm
 import random
 
 
-
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
                  epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device):
@@ -45,8 +44,8 @@ class Agent(ABC):
 
       for ep in pbar:
         if total_steps > max_steps:
-            break
-        
+            print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
+            break    
         # Observar estado inicial como indica el algoritmo
         state, _ = self.env.reset()
         state_phi = self.state_processing_function(state)
@@ -119,7 +118,8 @@ class Agent(ABC):
                 # seleccionar acción sin exploración
                 action = self.select_action(state, current_steps=0, train=False)
                  #  ejecutar acción y actualizar estado
-                next_state, _, done, _, = env.step(action)
+                next_state, _, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
                 state = next_state
 
     @abstractmethod

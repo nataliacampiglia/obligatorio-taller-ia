@@ -37,30 +37,22 @@ class DQN_CNN_Model(nn.Module):
     def __init__(self,  obs_shape, n_actions):
         super(DQN_CNN_Model, self).__init__()
         in_channels, h, w = obs_shape
+        print(f"Output shape before conv1: ({h}, {w})")
+        # Capa convolucional 1 (igual que en el paper)
+        # out_channels = 16, kernel_size = 8, stride = 4
+        self.conv1 = nn.Conv2d(in_channels, out_channels=16, kernel_size=8, stride=4)
+        h, w = conv2d_output_shape((h, w), kernel_size=8, stride=4)
+        print(f"Output shape after conv1: ({h}, {w})")
+        # Capa convolucional 2 (igual que en el paper)
+        # out_channels = 32, kernel_size = 4, stride = 2
+        self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, stride=2)
+        h, w = conv2d_output_shape((h, w), kernel_size=4, stride=2)
+        print(f"Output shape after conv2: ({h}, {w})")
 
-        # Capas convolucionales (igual que en el paper)
-        print(in_channels, h, w)
-        out_channels_conv1 = 16
-        # self.conv1 = nn.Conv2d(in_channels=4, out_channels=16, kernel_size=9, padding=4)
-        kernel_size = 8
-        stride = 4
-        self.conv1 = nn.Conv2d(in_channels, out_channels=out_channels_conv1, kernel_size=kernel_size, stride=stride)
-        # print(f"{ states.shape = }")
-        h, w = conv2d_output_shape((h, w), kernel_size, stride=4)
-        print('conv1', h, w)
-
-        kernel_size = 4
-        stride = 2
-        self.conv2 = nn.Conv2d(out_channels_conv1, 32, kernel_size=kernel_size, stride=stride)
-        h, w = conv2d_output_shape((h, w), kernel_size, stride=stride)
-        print('conv2', h, w)
 
         # Capas completamente conectadas
-        # TODO porque 256
         self.fc1 = nn.Linear(32 * h * w, 256)
-        self.fc2 = nn.Linear(256, n_actions)
-        print(self.fc2)
-        
+        self.fc2 = nn.Linear(256, n_actions)   
 
     def forward(self, obs):
         # TODO: 1) aplicar convoluciones y activaciones
@@ -69,21 +61,13 @@ class DQN_CNN_Model(nn.Module):
         #       4) devolver tensor de Q-values de tamaño (batch, n_actions)
 
         # obs shape: (batch_size, 4, 84, 84)
-        # print(obs)
-        print(f"{ obs.shape = }")
         
         x = self.conv1(obs)
         x = F.relu(x)
-        print(f"{ x.shape = }")
 
         x = self.conv2(x)
-        print(f"{ x.shape = }")
-        # result shape
         x = F.relu(x)
-        print(f"{ x.shape = }")
 
-        x = x.view(x.size(0), -1)  # Aplanar
-        print(f"{ x.shape = }")
+        x = x.view(x.size(0), -1)  # Para aplanar en una sola dimensión
         x = F.relu(self.fc1(x))
-        print(f"{ x.shape = }")
         return self.fc2(x)
