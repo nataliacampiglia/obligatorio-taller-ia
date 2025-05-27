@@ -35,41 +35,57 @@ def conv2d_output_shape(
 
 class DQN_CNN_Model(nn.Module):
     def __init__(self,  obs_shape, n_actions):
+        """
+        CNN según Mnih et al. (2013):
+        - 2 capas convolucionales (16 @ 8×8/4 y 32 @ 4×4/2)
+        - 1 capa fully-connected intermedia de 256 unidades
+        - 1 capa de salida con un Q-value por acción
+        """
         super(DQN_CNN_Model, self).__init__()
-        # obs_shape = (C, H, W), típicamente C=4 (frames stack), H=W=84
+        # Desempaquetar canales y dimensiones
         c, h, w = obs_shape
 
-        # Capas convolucionales según el paper
+        # Primera capa conv: 16 filtros, kernel 8x8, stride 4. Los kernels grandes (8×8) con stride 4, capturan patrones espaciales gruesos
+        # Impacto en la imagen: reduce la resolución de (h, w) a ((h-8)/4+1, (w-8)/4+1), filtrando detalles finos.
         self.conv1 = nn.Conv2d(c, 16, kernel_size=8, stride=4)
+
+        # Segunda capa convolucional. Los kernels más pequeños (4×4) con stride 2 refina características detectadas
+        # Impacto en la imagen: reduce aún más el tamaño espacial, enfocándose en estructuras intermedias.
         self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
 
-        # Calculamos dinámicamente la salida de las convs para la capa fc
+        # Cálculo dinámico del tamaño tras convoluciones para aplanamiento
         h1, w1 = conv2d_output_shape((h, w), kernel_size=8, stride=4)
-        print(f"conv1 output shape: {h1}x{w1}")
         h2, w2 = conv2d_output_shape((h1, w1), kernel_size=4, stride=2)
-        print(f"conv2 output shape: {h2}x{w2}")
-        conv_out_size = h2 * w2 * 32
+       
+        flattened_size = 32 * h2 * w2
 
-        # Capa fully-connected intermedia
-        self.fc = nn.Linear(conv_out_size, 256)
-        # Capa de salida para Q-values
+        # Capa fully-connected intermedia de 256 neuronas
+        # Impacto: convierte mapas de características en un vector que sintetiza toda la información.
+        self.fc = nn.Linear(flattened_size, 256)
+
+        # Capa de salida con un Q-value por cada acción posible. Cada neurona estima el valor futuro esperado de tomar su acción correspondiente
+        # Impacto: produce el vector de Q-values que guiará la política ε-greedy.
         self.out = nn.Linear(256, n_actions)
-        print(f"conv_out_size: {conv_out_size}, fc output size: 256, n_actions: {n_actions}")
-        print(self.out)
-        
 
     def forward(self, obs):
         """
-        Forward pass:
-          1) ReLU(conv1)
-          2) ReLU(conv2)
-          3) Aplanar
-          4) ReLU(fc)
-          5) out Q-values
+        Propagación hacia adelante:
+        1) Convoluciones + ReLU (extracción espacial)
+        2) Aplanamiento
+        3) Fully-connected + ReLU (representación no lineal)
+        4) Capa de salida (Q-values)
         """
-        x = F.relu(self.conv1(obs))
-        x = F.relu(self.conv2(x))
+        # 1) Extracción de características espaciales
+        x = F.relu(self.conv1(obs))  # Reduce dimensionalidad y filtra información relevante
+        x = F.relu(self.conv2(x))    # Afina patrones para la estimación de Q-values
+
+        # 2) Aplanamiento de mapas de características a vector
+        # Por qué: prepara la entrada para capas densas que no manejan tensores 2D
         x = x.view(x.size(0), -1)
+
+        # 3) Transformación no lineal en espacio de características
         x = F.relu(self.fc(x))
-        q_vals = self.out(x)
-        return q_vals 
+
+        # 4) Capa final sin activación
+        q_values = self.out(x)       # Devuelve un Q-value por acción, sin escalamiento
+        return q_values
