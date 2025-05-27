@@ -58,61 +58,83 @@ class DQNAgent(Agent):
 
     def select_action(self, state, current_steps, train=True):
         # Calcular epsilon según step
-        # Durante entrenamiento: con probabilidad epsilon acción aleatoria
-        #                   sino greedy_action
-        # Durante evaluación: usar greedy_action (o pequeña epsilon fija)
-        # si no es training epsilon sera 0, entonces elegira funcio greedy
-        epsilon = self.compute_epsilon(current_steps) if train else 0.0
+        # Epsilon decrece con más pasos para pasar de exploración a explotación gradual
+        epsilon = self.compute_epsilon(current_steps)
 
-        if random.random() < epsilon:
+        # Durante entrenamiento: exploración aleatoria con probabilidad epsilon
+        if train and random.random() < epsilon:
             return self.env.action_space.sample()
+        
+        # Explotación: seleccionar la acción greedy según Q-values
+        # Si el estado ya es tensor, úsalo directamente; si es numpy, conviértelo
+        if isinstance(state, torch.Tensor):
+            state_tensor = state.to(self.device).float().unsqueeze(0)
         else:
-            state_tensor = torch.tensor(
-                    state, dtype=torch.float32, device=self.device).unsqueeze(0)
-            with torch.no_grad():
-                q_values = self.policy_net(state_tensor)
-            best_Action = q_values.argmax(dim=1).item()
-            # print(f"{ best_Action = }")
-            return best_Action
+            arr = np.asarray(state, dtype=np.float32)
+            state_tensor = torch.from_numpy(arr).to(self.device).unsqueeze(0)
+        
+        # Con torch.no_grad() evitamos calcular gradientes, ya que no entrenamos en este paso
+        with torch.no_grad():
+            q_values = self.policy_net(state_tensor)
+        # greedy_action
+        return q_values.argmax(dim=1).item()
 
     def update_weights(self):
-        # import gc
-        # gc.collect()
-        # if torch.backends.mps.is_available():
-        #       torch.mps.empty_cache()
         # 1) Comprobar que hay al menos batch_size muestras en memoria
-
+        # Evitar entrenar con pocos datos que causen actualizaciones ruidosas
         if len(self.memory) < self.batch_size:
             return
 
         # 2) Muestrear minibatch y convertir a tensores (states, actions, rewards, dones, next_states)
+        # El muestreo aleatorio reduce correlaciones y estabiliza el aprendizaje
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
-        states = torch.stack(batch.state).to(self.device)
 
-        # print(f"{ states.dtype = }")
-        # print(f"{ states.shape = }")
-        # print(f"{ states.size() = }")
-        # states = torch.FloatTensor(np.array(batch.state)).to(self.device)
+        # Armar batch de estados
+        state_tensors = []
+        next_tensors = []
+
+        for s, ns in zip(batch.state, batch.next_state):
+            if isinstance(s, torch.Tensor):
+                state_tensors.append(s.to(self.device).float())
+            else:
+                state_tensors.append(
+                    torch.from_numpy(np.asarray(s, dtype=np.float32))
+                    .to(self.device)
+                )
+            if isinstance(ns, torch.Tensor):
+                next_tensors.append(ns.to(self.device).float())
+            else:
+                next_tensors.append(
+                    torch.from_numpy(np.asarray(ns, dtype=np.float32))
+                    .to(self.device)
+                )
+        states = torch.stack(state_tensors)
+        next_states = torch.stack(next_tensors)
+
+        # Convertir acciones, recompensas y dones a tensores
         actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
         rewards = torch.FloatTensor(batch.reward).unsqueeze(1).to(self.device)
         dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
-        next_states = torch.stack(batch.next_state).to(self.device)
-        # next_states = torch.FloatTensor(batch.next_state).to(self.device)
 
         # 3) Calcular q_current con policy_net(states).gather(...)
+        # gather extrae el Q-value correspondiente a la acción tomada en cada muestra
         q_current = self.policy_net(states).gather(1, actions)
 
         # 4) Con torch.no_grad(): calcular max_q_next_state = policy_net(next_states).max(dim=1)[0] * (1 - dones)
+        # No computar gradientes aquí para mantener la estabilidad de los objetivos
         with torch.no_grad():
-            max_q_next_state = self.policy_net(next_states).max(dim=1, keepdim=True)[0] * (1 - dones)
-            # 5) Calcular target = rewards + gamma * max_q_next_state
-            # q_target = rewards + self.gamma * max_q_next_state * (1 - dones)
-            #q_target = rewards + self.gamma * max_q_next_state
-            q_target = rewards + self.gamma * max_q_next_state
+            max_q_next = self.policy_net(next_states).max(dim=1)[0].unsqueeze(1)
+            max_q_next = max_q_next * (1 - dones)
+        
+        # 5) Calcular target = rewards + gamma * max_q_next_state
+        # Objetivo de Bellman: recompensa inmediata + valor descontado del siguiente estado
+        q_target = rewards + self.gamma * max_q_next
 
         # 6) Computar loss MSE entre q_current y target, backprop y optimizer.step()
+        # Minimizar esta pérdida ajusta la red para aproximar la función Q óptima
         loss = self.loss_fn(q_current, q_target)
         self.optimizer.zero_grad()
         loss.backward()
+        # Clipping de gradientes podría añadirse aquí para mayor estabilidad
         self.optimizer.step()

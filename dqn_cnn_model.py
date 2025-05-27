@@ -35,39 +35,58 @@ def conv2d_output_shape(
 
 class DQN_CNN_Model(nn.Module):
     def __init__(self,  obs_shape, n_actions):
+        """
+        CNN según Mnih et al. (2013):
+        - 2 capas convolucionales (16 @ 8×8/4 y 32 @ 4×4/2)
+        - 1 capa fully-connected intermedia de 256 unidades
+        - 1 capa de salida con un Q-value por acción
+        """
         super(DQN_CNN_Model, self).__init__()
+
+        # Desempaquetar canales y dimensiones
         in_channels, h, w = obs_shape
-        print(f"Output shape before conv1: ({h}, {w})")
-        # Capa convolucional 1 (igual que en el paper)
-        # out_channels = 16, kernel_size = 8, stride = 4
-        self.conv1 = nn.Conv2d(in_channels, out_channels=16, kernel_size=8, stride=4)
-        h, w = conv2d_output_shape((h, w), kernel_size=8, stride=4)
-        print(f"Output shape after conv1: ({h}, {w})")
-        # Capa convolucional 2 (igual que en el paper)
-        # out_channels = 32, kernel_size = 4, stride = 2
-        self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, stride=2)
-        h, w = conv2d_output_shape((h, w), kernel_size=4, stride=2)
-        print(f"Output shape after conv2: ({h}, {w})")
+        
+        # Primera capa conv: 16 filtros, kernel 8x8, stride 4. Los kernels grandes (8×8) con stride 4, capturan patrones espaciales gruesos
+        # Impacto en la imagen: reduce la resolución de (h, w) a ((h-8)/4+1, (w-8)/4+1), filtrando detalles finos.
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=8, stride=4)
 
+        # Segunda capa convolucional. Los kernels más pequeños (4×4) con stride 2 refina características detectadas
+        # Impacto en la imagen: reduce aún más el tamaño espacial, enfocándose en estructuras intermedias.
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
 
-        # Capas completamente conectadas
-        self.fc1 = nn.Linear(32 * h * w, 256)
-        self.fc2 = nn.Linear(256, n_actions)   
+        # Cálculo dinámico del tamaño tras convoluciones para aplanamiento
+        h1, w1 = conv2d_output_shape((h, w), kernel_size=8, stride=4)
+        h2, w2 = conv2d_output_shape((h1, w1), kernel_size=4, stride=2)
+
+        flattened_size = 32 * h2 * w2
+
+        # Capa fully-connected intermedia de 256 neuronas
+        # Impacto: convierte mapas de características en un vector que sintetiza toda la información.
+        self.fc = nn.Linear(flattened_size, 256)
+
+        # Capa de salida con un Q-value por cada acción posible. Cada neurona estima el valor futuro esperado de tomar su acción correspondiente
+        # Impacto: produce el vector de Q-values que guiará la política ε-greedy.
+        self.out = nn.Linear(256, n_actions)
 
     def forward(self, obs):
-        # TODO: 1) aplicar convoluciones y activaciones
-        #       2) aplanar la salida
-        #       3) aplicar capas lineales
-        #       4) devolver tensor de Q-values de tamaño (batch, n_actions)
+        """
+        Propagación hacia adelante:
+        1) Convoluciones + ReLU (extracción espacial)
+        2) Aplanamiento
+        3) Fully-connected + ReLU (representación no lineal)
+        4) Capa de salida (Q-values)
+        """
+        # 1) Extracción de características espaciales
+        x = F.relu(self.conv1(obs))  # Reduce dimensionalidad y filtra información relevante
+        x = F.relu(self.conv2(x))    # Afina patrones para la estimación de Q-values
 
-        # obs shape: (batch_size, 4, 84, 84)
-        
-        x = self.conv1(obs)
-        x = F.relu(x)
+        # 2) Aplanamiento de mapas de características a vector
+        # Por qué: prepara la entrada para capas densas que no manejan tensores 2D
+        x = x.view(x.size(0), -1)
 
-        x = self.conv2(x)
-        x = F.relu(x)
+        # 3) Transformación no lineal en espacio de características
+        x = F.relu(self.fc(x))
 
-        x = x.view(x.size(0), -1)  # Para aplanar en una sola dimensión
-        x = F.relu(self.fc1(x))
-        return self.fc2(x)
+        # 4) Capa final sin activación
+        q_values = self.out(x)       # Devuelve un Q-value por acción, sin escalamiento
+        return q_values
