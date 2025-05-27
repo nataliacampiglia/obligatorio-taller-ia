@@ -91,26 +91,8 @@ class DQNAgent(Agent):
         batch = Transition(*zip(*transitions))
 
         # Armar batch de estados
-        state_tensors = []
-        next_tensors = []
-
-        for s, ns in zip(batch.state, batch.next_state):
-            if isinstance(s, torch.Tensor):
-                state_tensors.append(s.to(self.device).float())
-            else:
-                state_tensors.append(
-                    torch.from_numpy(np.asarray(s, dtype=np.float32))
-                    .to(self.device)
-                )
-            if isinstance(ns, torch.Tensor):
-                next_tensors.append(ns.to(self.device).float())
-            else:
-                next_tensors.append(
-                    torch.from_numpy(np.asarray(ns, dtype=np.float32))
-                    .to(self.device)
-                )
-        states = torch.stack(state_tensors)
-        next_states = torch.stack(next_tensors)
+        states = torch.stack(batch.state).to(self.device)
+        next_states = torch.stack(batch.next_state).to(self.device)
 
         # Convertir acciones, recompensas y dones a tensores
         actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
@@ -124,9 +106,9 @@ class DQNAgent(Agent):
         # 4) Con torch.no_grad(): calcular max_q_next_state = policy_net(next_states).max(dim=1)[0] * (1 - dones)
         # No computar gradientes aquí para mantener la estabilidad de los objetivos
         with torch.no_grad():
-            max_q_next = self.policy_net(next_states).max(dim=1)[0].unsqueeze(1)
-            max_q_next = max_q_next * (1 - dones)
-        
+            max_q_next = self.policy_net(next_states).max(dim=1, keepdim=True).values
+            max_q_next = max_q_next * (1 - dones)   
+
         # 5) Calcular target = rewards + gamma * max_q_next_state
         # Objetivo de Bellman: recompensa inmediata + valor descontado del siguiente estado
         q_target = rewards + self.gamma * max_q_next
