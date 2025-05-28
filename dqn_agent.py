@@ -44,6 +44,7 @@ class DQNAgent(Agent):
         self.optimizer = torch.optim.Adam(
             self.policy_net.parameters(), lr=self.learning_rate
         )
+        # TO TRY: otra funcion de error
         self.loss_fn = nn.MSELoss()
         # Crear replay memory de tamaño buffer_size
         self.memory = ReplayMemory(memory_buffer_size)
@@ -89,6 +90,7 @@ class DQNAgent(Agent):
         # El muestreo aleatorio reduce correlaciones y estabiliza el aprendizaje
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
+        # states, actions, reward, next_state, done = zip(transitions*)
 
         # Armar batch de estados
         state_tensors = []
@@ -112,7 +114,12 @@ class DQNAgent(Agent):
         states = torch.stack(state_tensors)
         next_states = torch.stack(next_tensors)
 
+        # TODO cpheck:
+        # states_t (tensor) y next_state_t => shape = (batch_size=32, 4, 84,84)
+        
+
         # Convertir acciones, recompensas y dones a tensores
+        # actions_t, rewards_t, dones_t => shape = (batch_size, 1)
         actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
         rewards = torch.FloatTensor(batch.reward).unsqueeze(1).to(self.device)
         dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
@@ -124,8 +131,8 @@ class DQNAgent(Agent):
         # 4) Con torch.no_grad(): calcular max_q_next_state = policy_net(next_states).max(dim=1)[0] * (1 - dones)
         # No computar gradientes aquí para mantener la estabilidad de los objetivos
         with torch.no_grad():
-            max_q_next = self.policy_net(next_states).max(dim=1)[0].unsqueeze(1)
-            max_q_next = max_q_next * (1 - dones)
+            max_q_next = self.policy_net(next_states).max(dim=1, keepdim=True).values # bx1
+            max_q_next = max_q_next * (1 - dones) #si es el ultimo vale 0
         
         # 5) Calcular target = rewards + gamma * max_q_next_state
         # Objetivo de Bellman: recompensa inmediata + valor descontado del siguiente estado
