@@ -21,6 +21,7 @@ class DQNAgent(Agent):
         epsilon_anneal_steps,
         episode_block,
         device,
+        run_name="dqn_run",
     ):
         super().__init__(
             env,
@@ -34,6 +35,7 @@ class DQNAgent(Agent):
             epsilon_anneal_steps,
             episode_block,
             device,
+            run_name="dqn_run",
         )
         # Guardar entorno y función de preprocesamiento
         self.env = env
@@ -55,6 +57,7 @@ class DQNAgent(Agent):
         self.epsilon_f = epsilon_f
         self.epsilon_anneal_steps = epsilon_anneal_steps
         self.episode_block = episode_block
+        self.run_name = run_name
 
     def select_action(self, state, current_steps, train=True):
         # Calcular epsilon según step
