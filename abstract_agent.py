@@ -9,7 +9,7 @@ import random
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, checkpoint_every=500000):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=500000):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -32,6 +32,7 @@ class Agent(ABC):
         
         self.episode_block = episode_block
         self.checkpoint_every = checkpoint_every
+        self.run_name = run_name
 
         self.total_steps = 0
     
@@ -94,9 +95,10 @@ class Agent(ABC):
                 break 
 
         epsilon = self.compute_epsilon(total_steps)
+        reward = np.mean(rewards[-self.episode_block:])
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
-        metrics["reward"] = np.mean(rewards[-self.episode_block:])
+        metrics["reward"] = reward
         metrics["epsilon"] = epsilon
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
@@ -104,7 +106,7 @@ class Agent(ABC):
         if total_steps >= self.checkpoint_every:
             self.checkpoint_every += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run1-steps:{total_steps}-e:{epsilon:.4f}.dat")
+            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
       # Guardar el modelo entrenado  
       torch.save(self.policy_net.state_dict(), "GenericDQNAgent.dat")
