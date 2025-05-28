@@ -100,7 +100,7 @@ class DQNAgent(Agent):
         dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
 
         # 3) Calcular q_current con policy_net(states).gather(...)
-        # gather extrae el Q-value correspondiente a la acción tomada en cada muestra
+        # gather extrae el Q-value correspondiente a la acción tomada en cada muestra.
         q_current = self.policy_net(states).gather(1, actions)
 
         # 4) Con torch.no_grad(): calcular max_q_next_state = policy_net(next_states).max(dim=1)[0] * (1 - dones)
