@@ -57,7 +57,11 @@ class Agent(ABC):
             action = self.select_action(state_phi, total_steps, train=True)
 
             # Ejecutar action = env.step(action)
+<<<<<<< Updated upstream
             next_state, reward, terminated, truncated, _ = self.env.step(action)
+=======
+            next_state, reward, terminated, truncated, _, = self.env.step(action)
+>>>>>>> Stashed changes
             done = terminated or truncated
             # Procesar next_state con state_processing_function
             next_state_phi = self.state_processing_function(next_state)
