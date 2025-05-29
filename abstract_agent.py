@@ -44,7 +44,8 @@ class Agent(ABC):
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
       print("Iniciando entrenamiento...")
-
+      checkpoint = self.checkpoint_every
+      
       for ep in pbar:
         if total_steps > max_steps:
             break
@@ -55,6 +56,7 @@ class Agent(ABC):
         current_episode_reward = 0.0
         current_episode_steps = 0
         done = False
+       
 
         # Bucle principal de pasos dentro de un episodio
         for _ in range(max_steps):
@@ -103,8 +105,8 @@ class Agent(ABC):
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
 
-        if total_steps >= self.checkpoint_every:
-            self.checkpoint_every += self.checkpoint_every
+        if total_steps >= checkpoint:
+            checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
             torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
