@@ -1,5 +1,7 @@
 import random
+import torch
 from collections import namedtuple
+import numpy as np
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'reward', 'done', 'next_state'))
@@ -34,8 +36,11 @@ class ReplayMemory:
         """
         # Creamos una instancia de Transition con los datos pasados.
         # Por qué: agrupa los elementos de la experiencia en un solo objeto inmutable.
-        transition = Transition(state, action, reward, done, next_state)
 
+        transition = Transition(state, action, reward, done, next_state)
+        if not isinstance(state, torch.Tensor):
+          print("WARNING: State no es un tensor, se convertirá a tensor.")
+          state = torch.from_numpy(np.asarray(state, dtype=np.float32)).to(self.device)
         # Verificamos si la memoria no está llena.
         if len(self.memory) < self.capacity:
             # Si hay espacio, simplemente añadimos, conservando todas las experiencias.
