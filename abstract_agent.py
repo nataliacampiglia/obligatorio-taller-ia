@@ -58,7 +58,11 @@ class Agent(ABC):
 
             # Ejecutar action = env.step(action)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             next_state, reward, terminated, truncated, _ = self.env.step(action)
+=======
+            next_state, reward, terminated, truncated, _, = self.env.step(action)
+>>>>>>> Stashed changes
 =======
             next_state, reward, terminated, truncated, _, = self.env.step(action)
 >>>>>>> Stashed changes
