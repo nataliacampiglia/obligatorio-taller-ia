@@ -123,6 +123,8 @@ def graph_metrics(pathname=""):
     rewards = data["rewards"]
     losses = data["losses"]
     steps = data["steps"]
+    epsilons = data["epsilons"]
+    actions = data["actions"]
 
     # Recompensas
     plt.figure(figsize=(10, 4))
@@ -139,6 +141,33 @@ def graph_metrics(pathname=""):
     plt.title("Loss por Episodio")
     plt.xlabel("Episodio")
     plt.ylabel("Loss")
+    plt.grid(True)
+    plt.show()
+
+    # Steps
+    plt.figure(figsize=(10, 4))
+    plt.plot(steps)
+    plt.title("Steps por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Steps")
+    plt.grid(True)
+    plt.show()
+
+    # Actions
+    plt.figure(figsize=(10, 4))
+    plt.plot(actions)
+    plt.title("Acciones por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Acciones")
+    plt.grid(True)
+    plt.show()
+
+    # Epsilon
+    plt.figure(figsize=(10, 4))
+    plt.plot(epsilons)
+    plt.title("Epsilon por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Epsilon")
     plt.grid(True)
     plt.show()
     

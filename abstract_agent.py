@@ -40,6 +40,7 @@ class Agent(ABC):
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
       losses = []
+      epsilons = []
       steps_per_episode = []
       total_steps = 0
       
@@ -109,6 +110,7 @@ class Agent(ABC):
 
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
+        epsilons.append(epsilon)
         steps_per_episode.append(current_episode_steps)
         losses.append(loss)
         metrics["reward"] = reward
@@ -135,7 +137,8 @@ class Agent(ABC):
          rewards=np.array(rewards),
          losses=np.array(losses),
          actions=np.array(self.all_actions),
-         steps=np.array(steps_per_episode))
+         steps=np.array(steps_per_episode),
+         epsilons=np.array(epsilons))
       return rewards
     
         
