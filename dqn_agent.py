@@ -77,6 +77,7 @@ class DQNAgent(Agent):
         # Con torch.no_grad() evitamos calcular gradientes, ya que no entrenamos en este paso
         with torch.no_grad():
             q_values = self.policy_net(state_tensor)
+            print(f"Q-values: {q_values}")  # Debugging line to check Q-values
         # greedy_action
         return q_values.argmax(dim=1).item()
 
@@ -93,26 +94,8 @@ class DQNAgent(Agent):
         # states, actions, reward, next_state, done = zip(transitions*)
 
         # Armar batch de estados
-        state_tensors = []
-        next_tensors = []
-
-        for s, ns in zip(batch.state, batch.next_state):
-            if isinstance(s, torch.Tensor):
-                state_tensors.append(s.to(self.device).float())
-            else:
-                state_tensors.append(
-                    torch.from_numpy(np.asarray(s, dtype=np.float32))
-                    .to(self.device)
-                )
-            if isinstance(ns, torch.Tensor):
-                next_tensors.append(ns.to(self.device).float())
-            else:
-                next_tensors.append(
-                    torch.from_numpy(np.asarray(ns, dtype=np.float32))
-                    .to(self.device)
-                )
-        states = torch.stack(state_tensors)
-        next_states = torch.stack(next_tensors)
+        states = torch.stack(batch.state).to(self.device)
+        next_states = torch.stack(batch.next_state).to(self.device)
 
         # TODO cpheck:
         # states_t (tensor) y next_state_t => shape = (batch_size=32, 4, 84,84)
@@ -125,7 +108,7 @@ class DQNAgent(Agent):
         dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
 
         # 3) Calcular q_current con policy_net(states).gather(...)
-        # gather extrae el Q-value correspondiente a la acción tomada en cada muestra
+        # gather extrae el Q-value correspondiente a la acción tomada en cada muestra.
         q_current = self.policy_net(states).gather(1, actions)
 
         # 4) Con torch.no_grad(): calcular max_q_next_state = policy_net(next_states).max(dim=1)[0] * (1 - dones)
