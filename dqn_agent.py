@@ -21,6 +21,7 @@ class DQNAgent(Agent):
         epsilon_anneal_steps,
         episode_block,
         device,
+        run_name="dqn_run",
     ):
         super().__init__(
             env,
@@ -34,6 +35,7 @@ class DQNAgent(Agent):
             epsilon_anneal_steps,
             episode_block,
             device,
+            run_name="dqn_run",
         )
         # Guardar entorno y función de preprocesamiento
         self.env = env
@@ -55,6 +57,7 @@ class DQNAgent(Agent):
         self.epsilon_f = epsilon_f
         self.epsilon_anneal_steps = epsilon_anneal_steps
         self.episode_block = episode_block
+        self.run_name = run_name
 
     def select_action(self, state, current_steps, train=True):
         # Calcular epsilon según step
@@ -76,7 +79,6 @@ class DQNAgent(Agent):
         # Con torch.no_grad() evitamos calcular gradientes, ya que no entrenamos en este paso
         with torch.no_grad():
             q_values = self.policy_net(state_tensor)
-            print(f"Q-values: {q_values}")  # Debugging line to check Q-values
         # greedy_action
         return q_values.argmax(dim=1).item()
 
@@ -121,3 +123,6 @@ class DQNAgent(Agent):
         loss.backward()
         # Clipping de gradientes podría añadirse aquí para mayor estabilidad
         self.optimizer.step()
+
+        # Guardar el último valor de pérdida para poder graficarlo luego
+        self.last_loss = loss.item()

@@ -4,12 +4,12 @@ import numpy as np
 from replay_memory import ReplayMemory, Transition
 from abc import ABC, abstractmethod
 from tqdm import tqdm
-import random
+import os
 
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, checkpoint_every=500000):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=500000):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -32,17 +32,23 @@ class Agent(ABC):
         
         self.episode_block = episode_block
         self.checkpoint_every = checkpoint_every
+        self.run_name = run_name
 
         self.total_steps = 0
+        self.all_actions = []
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
+      losses = []
+      epsilons = []
+      steps_per_episode = []
       total_steps = 0
       
       metrics = {"reward": 0.0, "epsilon": self.epsilon_i, "steps": 0}
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
       print("Iniciando entrenamiento...")
+      checkpoint = self.checkpoint_every
 
       for ep in pbar:
         if total_steps > max_steps:
@@ -54,12 +60,14 @@ class Agent(ABC):
         current_episode_reward = 0.0
         current_episode_steps = 0
         done = False
+       
 
         # Bucle principal de pasos dentro de un episodio
         for _ in range(max_steps):
 
             # Seleccionar acción epsilon-greedy usando select_action()
             action = self.select_action(state_phi, total_steps, train=True)
+            self.all_actions.append(action)
 
             # Ejecutar action = env.step(action)
             next_state, reward, terminated, truncated, _, = self.env.step(action)
@@ -93,22 +101,44 @@ class Agent(ABC):
                 print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
                 break 
 
+        # Guardar datos para graficar
+        loss = getattr(self, "last_loss", 0.0)
+
+
         epsilon = self.compute_epsilon(total_steps)
+        reward = np.mean(rewards[-self.episode_block:])
+
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
-        metrics["reward"] = np.mean(rewards[-self.episode_block:])
+        epsilons.append(epsilon)
+        steps_per_episode.append(current_episode_steps)
+        losses.append(loss)
+        metrics["reward"] = reward
         metrics["epsilon"] = epsilon
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
 
-        if total_steps >= self.checkpoint_every:
-            self.checkpoint_every += self.checkpoint_every
+        if total_steps >= checkpoint:
+            checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run1-steps:{total_steps}-e:{epsilon:.4f}.dat")
+            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
       # Guardar el modelo entrenado  
-      torch.save(self.policy_net.state_dict(), "GenericDQNAgent.dat")
+      torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+    
+      # Guardar las métricas de entrenamiento
 
+      # Crear carpeta si no existe
+      metrics_dir = "metrics"
+      os.makedirs(metrics_dir, exist_ok=True)
+
+      # Guardar archivo con nombre personalizado dentro de esa carpeta
+      np.savez(f"{metrics_dir}/metrics_{self.run_name}.npz",
+         rewards=np.array(rewards),
+         losses=np.array(losses),
+         actions=np.array(self.all_actions),
+         steps=np.array(steps_per_episode),
+         epsilons=np.array(epsilons))
       return rewards
     
         
