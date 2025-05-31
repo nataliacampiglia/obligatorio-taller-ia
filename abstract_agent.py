@@ -5,6 +5,7 @@ from replay_memory import ReplayMemory, Transition
 from abc import ABC, abstractmethod
 from tqdm import tqdm
 import random
+from datetime import datetime
 
 
 class Agent(ABC):
@@ -103,8 +104,10 @@ class Agent(ABC):
 
         if total_steps >= self.checkpoint_every:
             self.checkpoint_every += self.checkpoint_every
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+      			# creamos historial: 
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run1-steps:{total_steps}-e:{epsilon:.4f}.dat")
+            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-{timestamp}-steps:{total_steps}-e:{epsilon:.4f}.dat")
 
       # Guardar el modelo entrenado  
       torch.save(self.policy_net.state_dict(), "GenericDQNAgent.dat")

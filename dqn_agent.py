@@ -77,7 +77,7 @@ class DQNAgent(Agent):
         # Con torch.no_grad() evitamos calcular gradientes, ya que no entrenamos en este paso
         with torch.no_grad():
             q_values = self.policy_net(state_tensor)
-            print(f"Q-values: {q_values}")  # Debugging line to check Q-values
+            # print(f"Q-values: {q_values}")  # Debugging line to check Q-values
         # greedy_action
         return q_values.argmax(dim=1).item()
 
