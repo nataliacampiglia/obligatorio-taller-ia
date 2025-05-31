@@ -107,3 +107,38 @@ def make_env(
     env = TransformReward(env, sign_fn)
     
     return env
+
+def graph_metrics(pathname=""):
+    """
+    Grafica las métricas de entrenamiento.
+    Args:
+        metrics (dict): Diccionario con las métricas a graficar.
+        title (str): Título del gráfico.
+        xlabel (str): Etiqueta del eje X.
+        ylabel (str): Etiqueta del eje Y.
+        filename (str): Nombre del archivo para guardar el gráfico. Si está vacío, no se guarda.
+    """
+    data = np.load(pathname)
+
+    rewards = data["rewards"]
+    losses = data["losses"]
+    steps = data["steps"]
+
+    # Recompensas
+    plt.figure(figsize=(10, 4))
+    plt.plot(rewards)
+    plt.title("Recompensa por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Recompensa")
+    plt.grid(True)
+    plt.show()
+
+    # Loss
+    plt.figure(figsize=(10, 4))
+    plt.plot(losses)
+    plt.title("Loss por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Loss")
+    plt.grid(True)
+    plt.show()
+    

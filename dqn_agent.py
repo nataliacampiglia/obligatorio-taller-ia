@@ -123,3 +123,6 @@ class DQNAgent(Agent):
         loss.backward()
         # Clipping de gradientes podría añadirse aquí para mayor estabilidad
         self.optimizer.step()
+
+        # Guardar el último valor de pérdida para poder graficarlo luego
+        self.last_loss = loss.item()
