@@ -7,10 +7,12 @@ import replay_memory  # or whatever module you changed
 import dqn_cnn_model
 import dqn_agent
 import abstract_agent
+import constants
 importlib.reload(replay_memory)
 importlib.reload(dqn_cnn_model)
 importlib.reload(dqn_agent)
 importlib.reload(abstract_agent)
+importlib.reload(constants)
 from dqn_cnn_model import DQN_CNN_Model
 from dqn_agent import DQNAgent
 
@@ -27,8 +29,8 @@ def process_state(obs):
 
 
 def load_dqn_agent():
-    torch.mps.empty_cache()
-    gc.collect()
+    # torch.mps.empty_cache()
+    # gc.collect()
     env = make_env(ENV_NAME,
                 video_folder='./videos/dqn_training',
                 name_prefix="breakout",
@@ -47,5 +49,15 @@ def load_dqn_agent():
     net.eval()
 
     # obtener DQN AGENT
+    print(f"{ BUFFER_SIZE = }")
+    print(f"{ BATCH_SIZE = }")
+    print(f"{ LEARNING_RATE = }")
+    print(f"{ GAMMA = }")
+    print(f"{ EPSILON_INI = }")
+    print(f"{ EPSILON_MIN = }")
+    print(f"{ EPSILON_ANNEAL_STEPS = }")
+    print(f"{ DEVICE = }")
+   
+
     dqn_agent = DQNAgent(env, net, process_state, BUFFER_SIZE, BATCH_SIZE, LEARNING_RATE, GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN, epsilon_anneal_steps=EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, device=DEVICE)
     return dqn_agent

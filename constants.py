@@ -27,14 +27,14 @@ SKIP_FRAMES = 4 # saltamos SKIP_FRAMES frames (haciendo la misma acción)
 #  Hiperparámetros de entrenamiento del agente DQN   #
 ######################################################
 # TOTAL_STEPS = 10_000_000
-TOTAL_STEPS = 1_00_000
+TOTAL_STEPS = 2_000_000
 EPISODES = 10_000
 STEPS_PER_EPISODE = 20_000
 
 EPSILON_INI = 1
 EPSILON_MIN = 0.05
 # EPSILON_ANNEAL_STEPS = 1_000_000
-EPSILON_ANNEAL_STEPS = 10_000
+EPSILON_ANNEAL_STEPS = 700_000
 
 EPISODE_BLOCK = 100
 
