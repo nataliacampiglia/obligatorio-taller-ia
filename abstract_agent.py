@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from tqdm import tqdm
 import os
 
-
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
                  epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=500000):
@@ -121,19 +120,30 @@ class Agent(ABC):
         if total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+            
+            if hasattr(self, "policy_net") and self.policy_net is not None:
+                os.makedirs('net_history/dqn', exist_ok=True)
+                torch.save(self.policy_net.state_dict(), f"net_history/dqn/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+            else:
+                os.makedirs('net_history/ddqn', exist_ok=True)
+                torch.save(self.online_net.state_dict(), f"net_history/ddqn/GenericDDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
       # Guardar el modelo entrenado  
-      torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
-    
+      os.makedirs('net_history/ddqn', exist_ok=True)
+      if hasattr(self, "policy_net") and self.policy_net is not None:
+        torch.save(self.policy_net.state_dict(), f"net_history/dqn/GenericDQNAgent-run:{self.run_name}_final.dat")
+      else:
+        torch.save(self.online_net.state_dict(), f"net_history/ddqn/GenericDDQNAgent-run:{self.run_name}_final.dat")
+
       # Guardar las métricas de entrenamiento
 
       # Crear carpeta si no existe
-      metrics_dir = "metrics"
+      metrics_dir = "metrics/dqn" if hasattr(self, "policy_net") else "metrics/ddqnn"
       os.makedirs(metrics_dir, exist_ok=True)
 
       # Guardar archivo con nombre personalizado dentro de esa carpeta
-      np.savez(f"{metrics_dir}/metrics_{self.run_name}.npz",
+      savePath = f"{metrics_dir}/metrics_{self.run_name}.npz"
+      np.savez(savePath,
          rewards=np.array(rewards),
          losses=np.array(losses),
          actions=np.array(self.all_actions),

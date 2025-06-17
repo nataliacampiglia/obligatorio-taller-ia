@@ -51,9 +51,13 @@ class DoubleDQNAgent(Agent):
           return self.env.action_space.sample()
       
       with torch.no_grad():
-        state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-        q_values = self.online_net(state)
-        return q_values.argmax().item()
+        if isinstance(state, torch.Tensor):
+            state_tensor = state.to(self.device).float().unsqueeze(0)
+        else:
+            arr = np.asarray(state, dtype=np.float32)
+            state_tensor = torch.from_numpy(arr).to(self.device).unsqueeze(0)
+        q_values = self.online_net(state_tensor)
+        return q_values.argmax(dim=1).item()
     
     def update_weights(self):
       # 1) Verificar que haya al menos batch_size transiciones en memoria
@@ -64,11 +68,12 @@ class DoubleDQNAgent(Agent):
       transitions = self.memory.sample(self.batch_size)
       batch = Transition(*zip(*transitions))
 
-      states = torch.tensor(np.array(batch.state), dtype=torch.float32, device=self.device)
-      actions = torch.tensor(batch.action, dtype=torch.int64, device=self.device).unsqueeze(1)
-      rewards = torch.tensor(batch.reward, dtype=torch.float32, device=self.device).unsqueeze(1)
-      next_states = torch.tensor(np.array(batch.next_state), dtype=torch.float32, device=self.device)
-      dones = torch.tensor(batch.done, dtype=torch.float32, device=self.device).unsqueeze(1)
+      states = torch.stack(batch.state).to(self.device)
+      next_states = torch.stack(batch.next_state).to(self.device)
+
+      actions = torch.LongTensor(batch.action).unsqueeze(1).to(self.device)
+      rewards = torch.FloatTensor(batch.reward).unsqueeze(1).to(self.device)
+      dones = torch.FloatTensor(batch.done).unsqueeze(1).to(self.device)
 
       # 3) Calcular q_current: online_net(states).gather(…)
       q_current = self.online_net(states).gather(1, actions)
@@ -93,5 +98,3 @@ class DoubleDQNAgent(Agent):
       if self.sync_counter == 0:
         # Cada sync_target pasos, copiamos los pesos de la red online a la target
         self.target_net.load_state_dict(self.online_net.state_dict())
-      
-            
