@@ -92,6 +92,7 @@ class DoubleDQNAgent(Agent):
       self.optimizer.zero_grad()
       loss.backward()
       self.optimizer.step()
+      self.last_loss = loss.item()
 
       # 6) Decrementar contador y si llega a 0 copiar online_net → target_net
       self.sync_counter -= 1

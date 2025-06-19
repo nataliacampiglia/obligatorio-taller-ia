@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from replay_memory import ReplayMemory, Transition
+from replay_memory import ReplayMemory
+from collections import Counter
 from abc import ABC, abstractmethod
 from tqdm import tqdm
 import os
@@ -58,6 +59,7 @@ class Agent(ABC):
         state_phi = self.state_processing_function(state)
         current_episode_reward = 0.0
         current_episode_steps = 0
+        current_episode_actions = []
         done = False
        
 
@@ -66,7 +68,7 @@ class Agent(ABC):
 
             # Seleccionar acción epsilon-greedy usando select_action()
             action = self.select_action(state_phi, total_steps, train=True)
-            self.all_actions.append(action)
+            current_episode_actions.append(action)
 
             # Ejecutar action = env.step(action)
             next_state, reward, terminated, truncated, _, = self.env.step(action)
@@ -102,7 +104,9 @@ class Agent(ABC):
 
         # Guardar datos para graficar
         loss = getattr(self, "last_loss", 0.0)
-
+        counter = Counter(current_episode_actions)
+        action_distribution = [counter.get(i, 0) for i in range(self.env.action_space.n)]
+        self.all_actions.append(action_distribution)
 
         epsilon = self.compute_epsilon(total_steps)
         reward = np.mean(rewards[-self.episode_block:])
@@ -138,7 +142,7 @@ class Agent(ABC):
       # Guardar las métricas de entrenamiento
 
       # Crear carpeta si no existe
-      metrics_dir = "metrics/dqn" if hasattr(self, "policy_net") else "metrics/ddqnn"
+      metrics_dir = "metrics/dqn" if hasattr(self, "policy_net") else "metrics/ddqn"
       os.makedirs(metrics_dir, exist_ok=True)
 
       # Guardar archivo con nombre personalizado dentro de esa carpeta
