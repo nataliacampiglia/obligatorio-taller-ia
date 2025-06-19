@@ -11,7 +11,7 @@ Transition = namedtuple('Transition',
 
 class ReplayMemory:
 
-    def __init__(self, capacity=4):
+    def __init__(self, capacity=4, device=None):
         """
         Inicializa la memoria de repetición con capacidad fija.
         Params:
@@ -27,6 +27,8 @@ class ReplayMemory:
         # Creamos un puntero circular position inicializado en 0.
         # Por qué: indica la posición donde se sobrescribirá la próxima transición cuando esté llena.
         self.position = 0
+
+        self.device = device
         
 
     def add(self, state, action, reward, done, next_state):

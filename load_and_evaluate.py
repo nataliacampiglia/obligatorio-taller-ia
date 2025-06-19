@@ -28,22 +28,27 @@ def process_state(obs):
     return torch.tensor(obs, dtype=torch.float32, device=DEVICE) / 255.0
 
 
-def load_dqn_agent():
-    # torch.mps.empty_cache()
-    # gc.collect()
+def create_env(video_folder='./videos/dqn_training'):
     env = make_env(ENV_NAME,
-                video_folder='./videos/dqn_training',
-                name_prefix="breakout",
-                record_every=500,
-                grayscale=GRAY_SCALE,
-                screen_size=SCREEN_SIZE,
-                stack_frames=NUM_STACKED_FRAMES,
-                skip_frames=SKIP_FRAMES
-                )
+        video_folder=video_folder,
+        name_prefix="breakout",
+        record_every=500,
+        grayscale=GRAY_SCALE,
+        screen_size=SCREEN_SIZE,
+        stack_frames=NUM_STACKED_FRAMES,
+        skip_frames=SKIP_FRAMES
+        )
+    return env
+
+
+
+def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK):
+    ### Creamos la policy_net
     net = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
 
     # Cargar los pesos guardados
-    net.load_state_dict(torch.load("GenericDQNAgent.dat", map_location=DEVICE))
+    if (loadPath):
+        net.load_state_dict(torch.load(loadPath, map_location=DEVICE))
 
     # Pasar a evaluación
     net.eval()
@@ -59,5 +64,5 @@ def load_dqn_agent():
     print(f"{ DEVICE = }")
    
 
-    dqn_agent = DQNAgent(env, net, process_state, BUFFER_SIZE, BATCH_SIZE, LEARNING_RATE, GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN, epsilon_anneal_steps=EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, device=DEVICE)
+    dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE)
     return dqn_agent

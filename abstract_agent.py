@@ -7,6 +7,8 @@ from tqdm import tqdm
 import random
 from datetime import datetime
 
+from constants import (MODEL_PATH)
+
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
@@ -38,7 +40,7 @@ class Agent(ABC):
         self.total_steps = 0
         self.all_actions = []
     
-    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
+    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000, model_path=MODEL_PATH):
       rewards = []
       losses = []
       epsilons = []
@@ -129,7 +131,7 @@ class Agent(ABC):
             # torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-{timestamp}-steps:{total_steps}-e:{epsilon:.4f}.dat")
 
       # Guardar el modelo entrenado  
-      torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+      torch.save(self.policy_net.state_dict(), f"{model_path}.dat")
     
       # Guardar las métricas de entrenamiento
 
