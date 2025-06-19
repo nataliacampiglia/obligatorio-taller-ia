@@ -107,3 +107,67 @@ def make_env(
     env = TransformReward(env, sign_fn)
     
     return env
+
+def graph_metrics(pathname=""):
+    """
+    Grafica las métricas de entrenamiento.
+    Args:
+        metrics (dict): Diccionario con las métricas a graficar.
+        title (str): Título del gráfico.
+        xlabel (str): Etiqueta del eje X.
+        ylabel (str): Etiqueta del eje Y.
+        filename (str): Nombre del archivo para guardar el gráfico. Si está vacío, no se guarda.
+    """
+    data = np.load(pathname)
+
+    rewards = data["rewards"]
+    losses = data["losses"]
+    steps = data["steps"]
+    epsilons = data["epsilons"]
+    actions = data["actions"]
+
+    # Recompensas
+    plt.figure(figsize=(10, 4))
+    plt.plot(rewards)
+    plt.title("Recompensa por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Recompensa")
+    plt.grid(True)
+    plt.show()
+
+    # Loss
+    plt.figure(figsize=(10, 4))
+    plt.plot(losses)
+    plt.title("Loss por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Loss")
+    plt.grid(True)
+    plt.show()
+
+    # Steps
+    plt.figure(figsize=(10, 4))
+    plt.plot(steps)
+    plt.title("Steps por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Steps")
+    plt.grid(True)
+    plt.show()
+
+    # Actions
+    plt.figure(figsize=(10, 4))
+    plt.plot(actions)
+    plt.title("Acciones por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Acciones")
+    plt.grid(True)
+    plt.show()
+
+    # Epsilon
+    plt.figure(figsize=(10, 4))
+    plt.plot(epsilons)
+    plt.title("Epsilon por Episodio")
+    plt.xlabel("Episodio")
+    plt.ylabel("Epsilon")
+    plt.grid(True)
+    plt.show()
+    
