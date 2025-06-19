@@ -42,7 +42,7 @@ def create_env(video_folder='./videos/dqn_training'):
 
 
 
-def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK):
+def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, run_name="run"):
     ### Creamos la policy_net
     net = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
 
@@ -64,5 +64,5 @@ def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_
     print(f"{ DEVICE = }")
    
 
-    dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE)
+    dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE, run_name=run_name)
     return dqn_agent
