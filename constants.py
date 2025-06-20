@@ -46,4 +46,8 @@ LEARNING_RATE = 1e-5
 
 
 # Ruta del modelo guardado
+METRICS_DIR = "metrics"
+COMMON_METRICS_PATH = f"{METRICS_DIR}/metrics_"
+COMMON_MODEL_PATH = "net_history/GenericDQNAgent_" 
 MODEL_PATH = "net_history/GenericDQNAgent.dat"  # Cambiar si se usa timestamp
+PHASE1_MODEL_PATH = "net_history/GenericDQNAgent_phase1.dat" 

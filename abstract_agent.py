@@ -8,7 +8,7 @@ from tqdm import tqdm
 import random
 from datetime import datetime
 
-from constants import (MODEL_PATH)
+from constants import (MODEL_PATH, COMMON_METRICS_PATH, METRICS_DIR)
 
 
 class Agent(ABC):
@@ -132,16 +132,15 @@ class Agent(ABC):
             # torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-{timestamp}-steps:{total_steps}-e:{epsilon:.4f}.dat")
 
       # Guardar el modelo entrenado  
-      torch.save(self.policy_net.state_dict(), f"{model_path}.dat")
+      torch.save(self.policy_net.state_dict(), f"{model_path}")
     
       # Guardar las métricas de entrenamiento
 
       # Crear carpeta si no existe
-      metrics_dir = "metrics"
-      os.makedirs(metrics_dir, exist_ok=True)
+      os.makedirs(METRICS_DIR, exist_ok=True)
 
       # Guardar archivo con nombre personalizado dentro de esa carpeta
-      np.savez(f"{metrics_dir}/metrics_{self.run_name}.npz",
+      np.savez(f"{COMMON_METRICS_PATH}{self.run_name}.npz",
          rewards=np.array(rewards),
          losses=np.array(losses),
          actions=np.array(self.all_actions),
