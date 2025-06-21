@@ -36,10 +36,12 @@ class DoubleDQNAgent(Agent):
         self.epsilon_i = epsilon_i
         self.epsilon_f = epsilon_f
         self.epsilon_anneal_steps = epsilon_anneal_steps
+        self.episode_block = episode_block
+        # self.sync_target = sync_target
         self.run_name = run_name
 
         # Inicializar contador de pasos para sincronizar target
-        self.sync_counter = sync_target
+        self.sync_counter = sync_target  # no deberia ser 0?
         pass
     
     def select_action(self, state, current_steps, train=True):
