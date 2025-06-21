@@ -47,7 +47,47 @@ LEARNING_RATE = 1e-5
 
 # Ruta del modelo guardado
 METRICS_DIR = "metrics"
+DQN_METRICS_DIR = 'metrics/dqn'
+DDQN_METRICS_DIR = 'metrics/ddqn'
 COMMON_METRICS_PATH = f"{METRICS_DIR}/metrics_"
-COMMON_MODEL_PATH = "net_history/GenericDQNAgent_" 
+DQN_COMMON_METRICS_PATH = f"{DQN_METRICS_DIR}/metrics_"
+DDQN_COMMON_METRICS_PATH = f"{DDQN_METRICS_DIR}/metrics_"
+NET_HISTORY_DIR = "net_history"
+DQN_NET_HISTORY_DIR = f"{NET_HISTORY_DIR}/dqn"
+DDQN_NET_HISTORY_DIR = f"{NET_HISTORY_DIR}/ddqn"
+BREAKPOINT_DIR = "breakpoints"
+DQN_BREAKPOINT_DIR = f"{BREAKPOINT_DIR}/dqn"
+DDQN_BREAKPOINT_DIR = f"{BREAKPOINT_DIR}/ddqn"
+
+DQN_COMMON_MODEL_PATH = F"{DQN_NET_HISTORY_DIR}/GenericDQNAgent-" 
+DDQN_COMMON_MODEL_PATH = F"{DDQN_NET_HISTORY_DIR}/GenericDDQNAgent-"
 MODEL_PATH = "net_history/GenericDQNAgent.dat"  # Cambiar si se usa timestamp
 PHASE1_MODEL_PATH = "net_history/GenericDQNAgent_phase1.dat" 
+
+
+def getMetricsDir(isDQN):
+    if isDQN:
+        return DQN_METRICS_DIR
+    return DDQN_METRICS_DIR
+
+def getCommonMetricFilePath(isDQN ):
+    dirPath = getMetricsDir(isDQN)
+    return f"{dirPath}/metrics_"
+
+
+def getMetricFilePath(isDQN, run_name):
+    filePath = getCommonMetricFilePath(isDQN)
+    return f"{filePath}{run_name}.npz"
+
+def getGenericDataDir(isDQN):
+    if isDQN:
+        return DQN_NET_HISTORY_DIR
+    return DDQN_NET_HISTORY_DIR
+
+def getCommonDataFilePath(isDQN):
+    dirPath = getGenericDataDir(isDQN)
+    return f"{dirPath}/GenericDQNAgent-"
+
+def getGenericDataFilePath(isDQN, run_name):
+    filePath = getCommonDataFilePath(isDQN)
+    return f"{filePath}{run_name}.dat"

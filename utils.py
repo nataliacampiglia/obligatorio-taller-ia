@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import gymnasium
@@ -108,6 +109,10 @@ def make_env(
     
     return env
 
+def evaluate_training_phase_results(pathname="", phase_name=""): 
+    graph_metrics(pathname)
+    plot_q_values_per_phase(phase_name)
+
 def graph_metrics(pathname=""):
     """
     Grafica las métricas de entrenamiento.
@@ -125,6 +130,7 @@ def graph_metrics(pathname=""):
     steps = data["steps"]
     epsilons = data["epsilons"]
     actions = data["actions"]
+    print(f"Datos cargados de {pathname}:",  data["actions"])
 
     # Recompensas
     plt.figure(figsize=(10, 4))
@@ -155,10 +161,12 @@ def graph_metrics(pathname=""):
 
     # Actions
     plt.figure(figsize=(10, 4))
-    plt.plot(actions)
-    plt.title("Acciones por Episodio")
+    for i in range(actions.shape[1]):
+        plt.plot(actions[:, i], label=f"Acción {i}")
+    plt.title("Distribución de Acciones por Episodio")
     plt.xlabel("Episodio")
-    plt.ylabel("Acciones")
+    plt.ylabel("Frecuencia")
+    plt.legend()
     plt.grid(True)
     plt.show()
 
@@ -171,3 +179,48 @@ def graph_metrics(pathname=""):
     plt.grid(True)
     plt.show()
     
+def load_q_values(filename, type='ddqn'):
+    path = os.path.join(f"q_values/{type}", f"{filename}.npz")
+    data = np.load(path)
+    return data['q_values']
+
+
+def plot_q_values_per_phase(phase_name):
+    q_values = load_q_values(phase_name)
+    max_q_per_state = np.max(q_values, axis=1)
+    
+    plt.figure(figsize=(10,6))
+    plt.plot(max_q_per_state)
+    plt.title(f"Curva de convergencia Q - {phase_name}")
+    plt.xlabel("Estado de referencia")
+    plt.ylabel("Q máximo")
+    plt.grid(True)
+    plt.show()
+
+def compare_q_values_across_phases(phase_names):
+    plt.figure(figsize=(12, 7))
+    
+    for phase in phase_names:
+        q_values = load_q_values(phase)
+        max_q_per_state = np.max(q_values, axis=1)
+        plt.plot(max_q_per_state, label=phase)
+    
+    plt.title("Comparativa de convergencia Q por fase")
+    plt.xlabel("Estado de referencia")
+    plt.ylabel("Q máximo")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+def q_values_summary(phase_names):
+    summary = {}
+    for phase in phase_names:
+        q_values = load_q_values(phase)
+        max_q_per_state = np.max(q_values, axis=1)
+        summary[phase] = {
+            'mean': np.mean(max_q_per_state),
+            'std': np.std(max_q_per_state),
+            'min': np.min(max_q_per_state),
+            'max': np.max(max_q_per_state),
+        }
+    return summary
