@@ -13,7 +13,7 @@ from constants import (MODEL_PATH, COMMON_METRICS_PATH, METRICS_DIR)
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=500000):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=None):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -122,14 +122,10 @@ class Agent(ABC):
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
 
-        if total_steps >= checkpoint:
+        if checkpoint  and total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
-            # timestamp = datetime.now().strftime("%Y%m%d-%H%M")
-      		# 	# creamos historial: 
-            # print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            # torch.save(self.policy_net.state_dict(), f"net_history/GenericDQNAgent-{timestamp}-steps:{total_steps}-e:{epsilon:.4f}.dat")
+            torch.save(self.policy_net.state_dict(), f"net_history/breakpoints/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
       # Guardar el modelo entrenado  
       torch.save(self.policy_net.state_dict(), f"{model_path}")
@@ -164,9 +160,11 @@ class Agent(ABC):
         """
         Modo evaluación: ejecutar episodios sin actualizar la red.
         """
+        rewards = []
         for ep in range(episodes):
             state, _ = env.reset()
             done = False
+            current_episode_reward = 0.0
             while not done:
                 # Procesar el estado actual
                 state_phi = self.state_processing_function(state)
@@ -176,9 +174,13 @@ class Agent(ABC):
                 action = self.select_action(state_phi, self.total_steps, train=False)
 
                 # ejecutar acción y actualizar estado
-                next_state, _, terminated, truncated, _ = env.step(action)
+                next_state, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
                 state = next_state
+                current_episode_reward += reward
+            print(f"Recompensa total del episodio {ep}: {current_episode_reward}")
+            rewards.append(current_episode_reward)
+        print(f"Recompensa total promedio: {np.mean(rewards)}")
 
     @abstractmethod
     def select_action(self, state, current_steps, train=True):
