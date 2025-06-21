@@ -9,7 +9,9 @@ from tqdm import tqdm
 import random
 from datetime import datetime
 
-from constants import (MODEL_PATH, COMMON_METRICS_PATH, METRICS_DIR)
+from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT_DIR, DQN_COMMON_MODEL_PATH,
+                    getMetricsDir, getMetricFilePath, getGenericDataFilePath
+)
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
@@ -41,7 +43,7 @@ class Agent(ABC):
         self.total_steps = 0
         self.all_actions = []
     
-    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000, model_path=MODEL_PATH):
+    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
       losses = []
       epsilons = []
@@ -125,33 +127,36 @@ class Agent(ABC):
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
 
+        isDQN = hasattr(self, "policy_net") and self.policy_net is not None
         if checkpoint  and total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
             
-            if hasattr(self, "policy_net") and self.policy_net is not None:
-                os.makedirs('net_history/dqn', exist_ok=True)
-                torch.save(self.policy_net.state_dict(), f"net_history/dqn/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+            if isDQN:
+                os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
+                torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
             else:
-                os.makedirs('net_history/ddqn', exist_ok=True)
-                torch.save(self.online_net.state_dict(), f"net_history/ddqn/GenericDDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+                os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
+                torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
 
       # Guardar el modelo entrenado  
-      os.makedirs('net_history/ddqn', exist_ok=True)
-      if hasattr(self, "policy_net") and self.policy_net is not None:
+      genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
+      if isDQN:
         # torch.save(self.policy_net.state_dict(), f"{model_path}")
-        torch.save(self.policy_net.state_dict(), f"net_history/dqn/GenericDQNAgent-run:{self.run_name}_final.dat")
+        os.makedirs(DQN_COMMON_MODEL_PATH, exist_ok=True)
+        torch.save(self.policy_net.state_dict(), genericDataPath)
       else:
-        torch.save(self.online_net.state_dict(), f"net_history/ddqn/GenericDDQNAgent-run:{self.run_name}_final.dat")
+        os.makedirs(DDQN_NET_HISTORY_DIR, exist_ok=True)
+        torch.save(self.online_net.state_dict(), genericDataPath)
 
       # Guardar las métricas de entrenamiento
 
       # Crear carpeta si no existe
-      metrics_dir = "metrics/dqn" if hasattr(self, "policy_net") else "metrics/ddqn"
+      metrics_dir = getMetricsDir(isDQN)
       os.makedirs(metrics_dir, exist_ok=True)
 
       # Guardar archivo con nombre personalizado dentro de esa carpeta
-      savePath = f"{metrics_dir}/metrics_{self.run_name}.npz"
+      savePath = getMetricFilePath(isDQN, self.run_name)
       np.savez(savePath,
          rewards=np.array(rewards),
          losses=np.array(losses),
