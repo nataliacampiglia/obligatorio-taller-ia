@@ -37,11 +37,11 @@ class DoubleDQNAgent(Agent):
         self.epsilon_f = epsilon_f
         self.epsilon_anneal_steps = epsilon_anneal_steps
         self.episode_block = episode_block
-        # self.sync_target = sync_target
+        self.sync_target = sync_target  # Store the sync_target parameter
         self.run_name = run_name
 
         # Inicializar contador de pasos para sincronizar target
-        self.sync_counter = sync_target  # no deberia ser 0?
+        self.sync_counter = 0  # Start at 0, will sync after sync_target steps
         pass
     
     def select_action(self, state, current_steps, train=True):
@@ -93,11 +93,16 @@ class DoubleDQNAgent(Agent):
       loss = self.loss_fn(q_current, target_q)
       self.optimizer.zero_grad()
       loss.backward()
+      
+      # Optional: Add gradient clipping for stability
+      torch.nn.utils.clip_grad_norm_(self.online_net.parameters(), max_norm=1.0)
+      
       self.optimizer.step()
       self.last_loss = loss.item()
 
       # 6) Decrementar contador y si llega a 0 copiar online_net → target_net
-      self.sync_counter -= 1
-      if self.sync_counter == 0:
+      self.sync_counter += 1
+      if self.sync_counter >= self.sync_target:
         # Cada sync_target pasos, copiamos los pesos de la red online a la target
         self.target_net.load_state_dict(self.online_net.state_dict())
+        self.sync_counter = 0  # Reset counter after syncing
