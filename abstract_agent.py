@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import numpy as np
@@ -5,11 +6,14 @@ from replay_memory import ReplayMemory
 from collections import Counter
 from abc import ABC, abstractmethod
 from tqdm import tqdm
-import os
+import random
+from datetime import datetime
+
+from constants import (MODEL_PATH, COMMON_METRICS_PATH, METRICS_DIR)
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=500000):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=None):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -37,7 +41,7 @@ class Agent(ABC):
         self.total_steps = 0
         self.all_actions = []
     
-    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
+    def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000, model_path=MODEL_PATH):
       rewards = []
       losses = []
       epsilons = []
@@ -121,7 +125,7 @@ class Agent(ABC):
         metrics["steps"] = total_steps
         pbar.set_postfix(metrics)
 
-        if total_steps >= checkpoint:
+        if checkpoint  and total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
             print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
             
@@ -135,6 +139,7 @@ class Agent(ABC):
       # Guardar el modelo entrenado  
       os.makedirs('net_history/ddqn', exist_ok=True)
       if hasattr(self, "policy_net") and self.policy_net is not None:
+        # torch.save(self.policy_net.state_dict(), f"{model_path}")
         torch.save(self.policy_net.state_dict(), f"net_history/dqn/GenericDQNAgent-run:{self.run_name}_final.dat")
       else:
         torch.save(self.online_net.state_dict(), f"net_history/ddqn/GenericDDQNAgent-run:{self.run_name}_final.dat")
@@ -171,9 +176,11 @@ class Agent(ABC):
         """
         Modo evaluación: ejecutar episodios sin actualizar la red.
         """
+        rewards = []
         for ep in range(episodes):
             state, _ = env.reset()
             done = False
+            current_episode_reward = 0.0
             while not done:
                 # Procesar el estado actual
                 state_phi = self.state_processing_function(state)
@@ -183,9 +190,13 @@ class Agent(ABC):
                 action = self.select_action(state_phi, self.total_steps, train=False)
 
                 # ejecutar acción y actualizar estado
-                next_state, _, terminated, truncated, _ = env.step(action)
+                next_state, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
                 state = next_state
+                current_episode_reward += reward
+            print(f"Recompensa total del episodio {ep}: {current_episode_reward}")
+            rewards.append(current_episode_reward)
+        print(f"Recompensa total promedio: {np.mean(rewards)}")
 
     @abstractmethod
     def select_action(self, state, current_steps, train=True):
