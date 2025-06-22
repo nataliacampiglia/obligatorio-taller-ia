@@ -42,7 +42,7 @@ class DoubleDQNAgent(Agent):
 
         # Inicializar contador de pasos para sincronizar target
         self.sync_counter = 0  # Start at 0, will sync after sync_target steps
-        pass
+
     
     def select_action(self, state, current_steps, train=True):
       # Calcular epsilon decay según step (entre eps_start y eps_end en eps_steps)
@@ -52,14 +52,19 @@ class DoubleDQNAgent(Agent):
       if train and random.random() < epsilon:
           return self.env.action_space.sample()
       
+      
+      if isinstance(state, torch.Tensor):
+          state_tensor = state.to(self.device).float().unsqueeze(0)
+      else:
+          # torch.tensor(np.array(state), dtype=torch.float32).unsqueeze(0).to(self.device)
+          arr = np.asarray(state, dtype=np.float32)
+          state_tensor = torch.from_numpy(arr).to(self.device).unsqueeze(0)
+       
       with torch.no_grad():
-        if isinstance(state, torch.Tensor):
-            state_tensor = state.to(self.device).float().unsqueeze(0)
-        else:
-            arr = np.asarray(state, dtype=np.float32)
-            state_tensor = torch.from_numpy(arr).to(self.device).unsqueeze(0)
         q_values = self.online_net(state_tensor)
-        return q_values.argmax(dim=1).item()
+      # greedy_action
+      return q_values.argmax(dim=1).item()
+
     
     def update_weights(self):
       # 1) Verificar que haya al menos batch_size transiciones en memoria
@@ -86,9 +91,10 @@ class DoubleDQNAgent(Agent):
         next_actions = self.online_net(next_states).argmax(1, keepdim=True)
         # b) Evaluamos esas acciones en la red target (Q_target(s', a'))
         q_next = self.target_net(next_states).gather(1, next_actions)
-        # c) Calculamos el target: r + gamma * Q_target * (1 - done)
-        target_q = rewards + self.gamma * q_next * (1 - dones)
-
+        q_next = q_next * (1 - dones)
+       
+     # c) Calculamos el target: r + gamma * Q_target * (1 - done)
+      target_q = rewards + self.gamma * q_next
       # 5) Computar loss MSE entre q_current y target_q, backprop y optimizer.step()
       loss = self.loss_fn(q_current, target_q)
       self.optimizer.zero_grad()
