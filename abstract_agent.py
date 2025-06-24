@@ -138,6 +138,10 @@ class Agent(ABC):
             else:
                 os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
                 torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
+            
+        if total_steps % 200000 == 0:
+            # mostrar recompensa actual y epsilon, y crear un salto de linea
+            print(f"=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===")
 
       # Guardar el modelo entrenado  
       genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
