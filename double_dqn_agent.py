@@ -8,7 +8,7 @@ import random
 
 class DoubleDQNAgent(Agent):
     def __init__(self, gym_env, model_a, model_b, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, sync_target = 1000, run_name="dqn_run",):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, sync_target = 1000, run_name="dqn_run", use_clip=True):
         
         super().__init__(gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, run_name)
         # Guardar entorno y función de preprocesamiento
@@ -42,6 +42,8 @@ class DoubleDQNAgent(Agent):
 
         # Inicializar contador de pasos para sincronizar target
         self.sync_counter = 0  # Start at 0, will sync after sync_target steps
+
+        self.use_clip = use_clip
 
     
     def select_action(self, state, current_steps, train=True):
@@ -101,7 +103,8 @@ class DoubleDQNAgent(Agent):
       loss.backward()
       
       # Optional: Add gradient clipping for stability
-      torch.nn.utils.clip_grad_norm_(self.online_net.parameters(), max_norm=1.0)
+      if self.use_clip:
+        torch.nn.utils.clip_grad_norm_(self.online_net.parameters(), max_norm=1.0)
       
       self.optimizer.step()
       self.last_loss = loss.item()
