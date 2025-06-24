@@ -141,7 +141,7 @@ class Agent(ABC):
             
         if total_steps % 150000 == 0:
             # mostrar recompensa actual y epsilon, y crear un salto de linea
-            print(f"=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===")
+            print(f"=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===\n")
 
       # Guardar el modelo entrenado  
       genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
