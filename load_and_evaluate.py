@@ -54,15 +54,15 @@ def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_
     net.eval()
 
     # obtener DQN AGENT
-    print(f"{ BUFFER_SIZE = }")
-    print(f"{ BATCH_SIZE = }")
-    print(f"{ LEARNING_RATE = }")
-    print(f"{ GAMMA = }")
-    print(f"{ EPSILON_INI = }")
-    print(f"{ EPSILON_MIN = }")
-    print(f"{ EPSILON_ANNEAL_STEPS = }")
-    print(f"{ DEVICE = }")
-   
+    print(f"{ buffer_size = }")
+    print(f"{ batch_size = }")
+    print(f"{ learning_rate = }")
+    print(f"{ gamma = }")
+    print(f"{ epsilon_i = }")
+    print(f"{ epsilon_f = }")
+    print(f"{ epsilon_anneal_steps = }")
+    print(f"{ episode_block = }")
+    print(f"{ run_name = }")   
 
     dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE, run_name=run_name)
     return dqn_agent
