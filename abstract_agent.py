@@ -134,10 +134,10 @@ class Agent(ABC):
             
             if isDQN:
                 os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+                torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
             else:
                 os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+                torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
 
       # Guardar el modelo entrenado  
       genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
