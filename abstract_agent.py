@@ -46,6 +46,7 @@ class Agent(ABC):
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
+      mean_rewards = []
       losses = []
       epsilons = []
       steps_per_episode = []
@@ -122,9 +123,10 @@ class Agent(ABC):
 
         epsilon = self.compute_epsilon(total_steps)
         reward = np.mean(rewards[-self.episode_block:])
+        mean_rewards.append(reward)
 
         # Registro de métricas y progreso
-        rewards.append(reward)
+        rewards.append(current_episode_reward)
         epsilons.append(epsilon)
         steps_per_episode.append(current_episode_steps)
         losses.append(loss)
@@ -168,7 +170,7 @@ class Agent(ABC):
       # Guardar archivo con nombre personalizado dentro de esa carpeta
       savePath = getMetricFilePath(isDQN, self.run_name)
       np.savez(savePath,
-         rewards=np.array(rewards),
+         rewards=np.array(mean_rewards),
          losses=np.array(losses),
          actions=np.array(self.all_actions),
          steps=np.array(steps_per_episode),
