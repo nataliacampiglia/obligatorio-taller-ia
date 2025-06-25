@@ -134,7 +134,7 @@ class Agent(ABC):
         isDQN = hasattr(self, "policy_net") and self.policy_net is not None
         if total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
-            print(f"=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===\n")
+            print(f"\n=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===\n")
             
             
             if self.load_checkpoint:
