@@ -50,6 +50,7 @@ class Agent(ABC):
       epsilons = []
       steps_per_episode = []
       total_steps = 0
+      reward_per_step = []
       
       metrics = {"reward": 0.0, "epsilon": self.epsilon_i, "steps": 0}
 
@@ -73,6 +74,7 @@ class Agent(ABC):
         current_episode_actions = []
         done = False
        
+       
 
         # Bucle principal de pasos dentro de un episodio
         for _ in range(max_steps):
@@ -89,6 +91,7 @@ class Agent(ABC):
             next_state_phi = self.state_processing_function(next_state)
 
             # Acumular reward y actualizar total_steps, current_episode_steps
+            reward_per_step.append(reward)
             current_episode_reward += reward
             total_steps += 1
             current_episode_steps += 1
@@ -107,10 +110,10 @@ class Agent(ABC):
             if done:
                 break
             if current_episode_steps >= max_steps_episode:
-                print(f"Se alcanzo {current_episode_steps} pasos en un mismo episodio.")
+                print(f"\nSe alcanzo {current_episode_steps} pasos en un mismo episodio.")
                 break
             if total_steps > max_steps:
-                print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
+                print(f"\nEntrenamiento detenido: se alcanzaron {total_steps} pasos.")
                 break 
 
         # Guardar datos para graficar
@@ -167,7 +170,7 @@ class Agent(ABC):
       # Guardar archivo con nombre personalizado dentro de esa carpeta
       savePath = getMetricFilePath(isDQN, self.run_name)
       np.savez(savePath,
-         rewards=np.array(rewards),
+         rewards=np.array(reward_per_step),
          losses=np.array(losses),
          actions=np.array(self.all_actions),
          steps=np.array(steps_per_episode),

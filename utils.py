@@ -137,7 +137,7 @@ def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=T
         plt.figure(figsize=(10, 4))
         plt.plot(rewards)
         plt.title("Recompensa por Episodio")
-        plt.xlabel("Episodio")
+        plt.xlabel("Steps")
         plt.ylabel("Recompensa")
         plt.grid(True)
         plt.show()
