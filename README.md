@@ -13,7 +13,17 @@
 * **Capa densa** : 256 neuronas + ReLU.
 * **Salida** : una neurona por acción posible (valor Q estimado).
 
+### Restore mps cache:
 
+importtorch
+
+importgc
+
+gc.collect()
+
+iftorch.backends.mps.is_available():
+
+torch.mps.empty_cache()
 
 ## Dudas
 

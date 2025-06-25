@@ -53,7 +53,9 @@ class Agent(ABC):
       metrics = {"reward": 0.0, "epsilon": self.epsilon_i, "steps": 0}
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
-      print("Iniciando entrenamiento...")
+      print("Iniciando entrenamiento...\n")
+      print(f"Hiperparametros:\n gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n"
+    )
       checkpoint = self.checkpoint_every
 
       for ep in pbar:
