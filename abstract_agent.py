@@ -54,11 +54,12 @@ class Agent(ABC):
       metrics = {"reward": 0.0, "epsilon": self.epsilon_i, "steps": 0}
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
-      print("Iniciando entrenamiento...\n")
-      print(f"Hiperparametros:\n gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n"
-    )
+      print('\n===========================================================================================\n')
+      print("Iniciando entrenamiento con los siguientes hiperparametros:\n")
+      print(f"gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n")
+      print('===========================================================================================\n')
+      
       checkpoint = self.checkpoint_every
-      printCheckpoint = 150000
 
       for ep in pbar:
         if total_steps > max_steps:
