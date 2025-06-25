@@ -15,7 +15,7 @@ from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=None):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -38,6 +38,7 @@ class Agent(ABC):
         
         self.episode_block = episode_block
         self.checkpoint_every = checkpoint_every
+        self.load_checkpoint = load_checkpoint
         self.run_name = run_name
 
         self.total_steps = 0
@@ -57,6 +58,7 @@ class Agent(ABC):
       print(f"Hiperparametros:\n gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n"
     )
       checkpoint = self.checkpoint_every
+      printCheckpoint = 150000
 
       for ep in pbar:
         if total_steps > max_steps:
@@ -130,20 +132,20 @@ class Agent(ABC):
         pbar.set_postfix(metrics)
 
         isDQN = hasattr(self, "policy_net") and self.policy_net is not None
-        if checkpoint  and total_steps >= checkpoint:
+        if total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
-            print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
-            
-            if isDQN:
-                os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
-            else:
-                os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
-            
-        if total_steps % 150000 == 0:
-            # mostrar recompensa actual y epsilon, y crear un salto de linea
             print(f"=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===\n")
+            
+            
+            if self.load_checkpoint:
+                print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
+                if isDQN:
+                    os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
+                    torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
+                else:
+                    os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
+                    torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
+           
 
       # Guardar el modelo entrenado  
       genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
