@@ -42,7 +42,8 @@ def create_env(video_folder='./videos/dqn_training'):
 
 
 
-def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA, epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, run_name="run"):
+def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA,
+                    epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, run_name="run"):
     ### Creamos la policy_net
     net = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
 
@@ -53,16 +54,18 @@ def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_
     # Pasar a evaluación
     net.eval()
 
-    # obtener DQN AGENT
-    print(f"{ BUFFER_SIZE = }")
-    print(f"{ BATCH_SIZE = }")
-    print(f"{ LEARNING_RATE = }")
-    print(f"{ GAMMA = }")
-    print(f"{ EPSILON_INI = }")
-    print(f"{ EPSILON_MIN = }")
-    print(f"{ EPSILON_ANNEAL_STEPS = }")
-    print(f"{ DEVICE = }")
-   
+    print("Parametros del agente:")
+    print(f"loadPath: {loadPath}")
+    print(f"buffer_size: {buffer_size}")
+    print(f"batch_size: {batch_size}")
+    print(f"learning_rate: {learning_rate}")
+    print(f"gamma: {gamma}")
+    print(f"epsilon_i: {epsilon_i}")
+    print(f"epsilon_f: {epsilon_f}")
+    print(f"epsilon_anneal_steps: {epsilon_anneal_steps}")
+    print(f"episode_block: {episode_block}")
+    print(f"run_name: {run_name}")
 
+  # obtener DQN AGENT
     dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE, run_name=run_name)
     return dqn_agent

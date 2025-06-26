@@ -113,7 +113,7 @@ def evaluate_training_phase_results(pathname="", phase_name=""):
     graph_metrics(pathname)
     plot_q_values_per_phase(phase_name)
 
-def graph_metrics(pathname=""):
+def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=True, show_actions=True, show_epsilons=True):
     """
     Grafica las métricas de entrenamiento.
     Args:
@@ -133,51 +133,58 @@ def graph_metrics(pathname=""):
     print(f"Datos cargados de {pathname}:",  data["actions"])
 
     # Recompensas
-    plt.figure(figsize=(10, 4))
-    plt.plot(rewards)
-    plt.title("Recompensa por Episodio")
-    plt.xlabel("Episodio")
-    plt.ylabel("Recompensa")
-    plt.grid(True)
-    plt.show()
+    if show_rewards:
+        plt.figure(figsize=(10, 4))
+        plt.plot(rewards)
+        plt.title("Recompensa por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Recompensa")
+        plt.grid(True)
+        plt.show()
+    
+    # Epsilon
+    if show_epsilons:
+        plt.figure(figsize=(10, 4))
+        plt.plot(epsilons)
+        plt.title("Epsilon por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.grid(True)
+        plt.show()
 
     # Loss
-    plt.figure(figsize=(10, 4))
-    plt.plot(losses)
-    plt.title("Loss por Episodio")
-    plt.xlabel("Episodio")
-    plt.ylabel("Loss")
-    plt.grid(True)
-    plt.show()
+    if show_losses:
+        plt.figure(figsize=(10, 4))
+        plt.plot(losses)
+        plt.title("Loss por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Loss")
+        plt.grid(True)
+        plt.show()
 
     # Steps
-    plt.figure(figsize=(10, 4))
-    plt.plot(steps)
-    plt.title("Steps por Episodio")
-    plt.xlabel("Episodio")
-    plt.ylabel("Steps")
-    plt.grid(True)
-    plt.show()
+    if show_steps:
+        plt.figure(figsize=(10, 4))
+        plt.plot(steps)
+        plt.title("Steps por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Steps")
+        plt.grid(True)
+        plt.show()
 
     # Actions
-    plt.figure(figsize=(10, 4))
-    for i in range(actions.shape[1]):
-        plt.plot(actions[:, i], label=f"Acción {i}")
-    plt.title("Distribución de Acciones por Episodio")
-    plt.xlabel("Episodio")
-    plt.ylabel("Frecuencia")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    if show_actions:
+        plt.figure(figsize=(10, 4))
+        for i in range(actions.shape[1]):
+            plt.plot(actions[:, i], label=f"Acción {i}")
+        plt.title("Distribución de Acciones por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Frecuencia")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
-    # Epsilon
-    plt.figure(figsize=(10, 4))
-    plt.plot(epsilons)
-    plt.title("Epsilon por Episodio")
-    plt.xlabel("Episodio")
-    plt.ylabel("Epsilon")
-    plt.grid(True)
-    plt.show()
+    
     
 def load_q_values(filename, type='ddqn'):
     path = os.path.join(f"q_values/{type}", f"{filename}.npz")

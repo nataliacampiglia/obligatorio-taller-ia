@@ -15,7 +15,7 @@ from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=None):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -38,6 +38,7 @@ class Agent(ABC):
         
         self.episode_block = episode_block
         self.checkpoint_every = checkpoint_every
+        self.load_checkpoint = load_checkpoint
         self.run_name = run_name
 
         self.total_steps = 0
@@ -45,6 +46,7 @@ class Agent(ABC):
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
+      mean_rewards = []
       losses = []
       epsilons = []
       steps_per_episode = []
@@ -53,7 +55,11 @@ class Agent(ABC):
       metrics = {"reward": 0.0, "epsilon": self.epsilon_i, "steps": 0}
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
-      print("Iniciando entrenamiento...")
+      print('\n===========================================================================================\n')
+      print(f"Iniciando entrenamiento {self.run_name}, con los siguientes hiperparametros:\n")
+      print(f"gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n")
+      print('===========================================================================================\n')
+      
       checkpoint = self.checkpoint_every
 
       for ep in pbar:
@@ -67,6 +73,7 @@ class Agent(ABC):
         current_episode_steps = 0
         current_episode_actions = []
         done = False
+       
        
 
         # Bucle principal de pasos dentro de un episodio
@@ -102,10 +109,10 @@ class Agent(ABC):
             if done:
                 break
             if current_episode_steps >= max_steps_episode:
-                print(f"Se alcanzo {current_episode_steps} pasos en un mismo episodio.")
+                print(f"\nSe alcanzo {current_episode_steps} pasos en un mismo episodio.")
                 break
             if total_steps > max_steps:
-                print(f"Entrenamiento detenido: se alcanzaron {total_steps} pasos.")
+                print(f"\nEntrenamiento detenido: se alcanzaron {total_steps} pasos.")
                 break 
 
         # Guardar datos para graficar
@@ -116,6 +123,7 @@ class Agent(ABC):
 
         epsilon = self.compute_epsilon(total_steps)
         reward = np.mean(rewards[-self.episode_block:])
+        mean_rewards.append(reward)
 
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
@@ -128,16 +136,20 @@ class Agent(ABC):
         pbar.set_postfix(metrics)
 
         isDQN = hasattr(self, "policy_net") and self.policy_net is not None
-        if checkpoint  and total_steps >= checkpoint:
+        if total_steps >= checkpoint:
             checkpoint += self.checkpoint_every
-            print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
+            print(f"\n=== Recompensa actual: {reward}, Epsilon: {epsilon}, Total steps: {total_steps} ===")
             
-            if isDQN:
-                os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
-            else:
-                os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
-                torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run:{self.run_name}-steps:{total_steps}-e:{epsilon:.4f}-max_r:{reward}.dat")
+            
+            if self.load_checkpoint:
+                print(f"Checkpoint guardado en GenericDQNAgent-steps:{total_steps}-e:{epsilon}.dat")
+                if isDQN:
+                    os.makedirs(DQN_BREAKPOINT_DIR, exist_ok=True)
+                    torch.save(self.policy_net.state_dict(), f"{DQN_BREAKPOINT_DIR}/GenericDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
+                else:
+                    os.makedirs(DDQN_BREAKPOINT_DIR, exist_ok=True)
+                    torch.save(self.online_net.state_dict(), f"{DDQN_BREAKPOINT_DIR}/GenericDDQNAgent-run-{self.run_name}-steps-{total_steps}-e-{epsilon:.4f}-max_r-{reward}.dat")
+           
 
       # Guardar el modelo entrenado  
       genericDataPath = getGenericDataFilePath(isDQN, self.run_name)
@@ -158,7 +170,7 @@ class Agent(ABC):
       # Guardar archivo con nombre personalizado dentro de esa carpeta
       savePath = getMetricFilePath(isDQN, self.run_name)
       np.savez(savePath,
-         rewards=np.array(rewards),
+         rewards=np.array(mean_rewards),
          losses=np.array(losses),
          actions=np.array(self.all_actions),
          steps=np.array(steps_per_episode),
