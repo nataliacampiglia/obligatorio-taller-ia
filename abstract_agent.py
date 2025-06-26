@@ -56,7 +56,7 @@ class Agent(ABC):
 
       pbar = tqdm(range(number_episodes), desc="Entrenando", unit="episode")
       print('\n===========================================================================================\n')
-      print("Iniciando entrenamiento con los siguientes hiperparametros:\n")
+      print(f"Iniciando entrenamiento {self.run_name}, con los siguientes hiperparametros:\n")
       print(f"gamma: {self.gamma}, epsilon_i: {self.epsilon_i}, epsilon_f: {self.epsilon_f}, epsilon_anneal_steps: {self.epsilon_anneal_steps}, max_steps: {max_steps}\n")
       print('===========================================================================================\n')
       
