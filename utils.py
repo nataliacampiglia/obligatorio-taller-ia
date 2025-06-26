@@ -141,6 +141,16 @@ def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=T
         plt.ylabel("Recompensa")
         plt.grid(True)
         plt.show()
+    
+    # Epsilon
+    if show_epsilons:
+        plt.figure(figsize=(10, 4))
+        plt.plot(epsilons)
+        plt.title("Epsilon por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.grid(True)
+        plt.show()
 
     # Loss
     if show_losses:
@@ -174,15 +184,7 @@ def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=T
         plt.grid(True)
         plt.show()
 
-    # Epsilon
-    if show_epsilons:
-        plt.figure(figsize=(10, 4))
-        plt.plot(epsilons)
-        plt.title("Epsilon por Episodio")
-        plt.xlabel("Episodio")
-        plt.ylabel("Epsilon")
-        plt.grid(True)
-        plt.show()
+    
     
 def load_q_values(filename, type='ddqn'):
     path = os.path.join(f"q_values/{type}", f"{filename}.npz")
