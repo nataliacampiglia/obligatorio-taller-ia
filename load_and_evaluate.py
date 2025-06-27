@@ -130,14 +130,14 @@ def execute_agent_play(agent, phase_id, type=DQN_TYPE):
     VALIDATION_VIDEO_FOLDER = f'./videos/{type}/validation/{phase_id}'
     # create env
     env = create_env(video_folder=VALIDATION_VIDEO_FOLDER)
+    # play
     agent.play(env, episodes=1)
 
     env.close()
 
     # Ruta al archivo de vídeo en tu sistema de ficheros
     video_path = f"{VALIDATION_VIDEO_FOLDER}/breakout-episode-0.mp4"
-
-    # Muestra el vídeo
-    Video(video_path, embed=True, width=600)
+    return video_path
+   
 
 
