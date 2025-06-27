@@ -108,7 +108,7 @@ def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, tota
     env = create_env(video_folder=video_folder)
     dqn_agent = load_dqn_agent(env, loadPath=loadPath, epsilon_i=epsilon_i, epsilon_f=epsilon_f, epsilon_anneal_steps=epsilon_anneal_steps, episode_block=EPISODE_BLOCK, run_name=phase_id, gamma=gamma)
     dqn_agent.train(episodes, STEPS_PER_EPISODE, total_steps)
-    save_q_values("q_values/dqn", dqn_agent.net, reference_states, DEVICE, f"{phase_id}")
+    save_q_values("q_values/dqn", dqn_agent.policy_net, reference_states, DEVICE, f"{phase_id}")
     env.close()
     return dqn_agent
 
@@ -130,14 +130,14 @@ def execute_agent_play(agent, phase_id, type=DQN_TYPE):
     VALIDATION_VIDEO_FOLDER = f'./videos/{type}/validation/{phase_id}'
     # create env
     env = create_env(video_folder=VALIDATION_VIDEO_FOLDER)
+    # play
     agent.play(env, episodes=1)
 
     env.close()
 
     # Ruta al archivo de vídeo en tu sistema de ficheros
     video_path = f"{VALIDATION_VIDEO_FOLDER}/breakout-episode-0.mp4"
-
-    # Muestra el vídeo
-    Video(video_path, embed=True, width=600)
+    return video_path
+   
 
 
