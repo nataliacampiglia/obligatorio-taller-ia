@@ -108,7 +108,7 @@ def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, tota
     env = create_env(video_folder=video_folder)
     dqn_agent = load_dqn_agent(env, loadPath=loadPath, epsilon_i=epsilon_i, epsilon_f=epsilon_f, epsilon_anneal_steps=epsilon_anneal_steps, episode_block=EPISODE_BLOCK, run_name=phase_id, gamma=gamma)
     dqn_agent.train(episodes, STEPS_PER_EPISODE, total_steps)
-    save_q_values("q_values/dqn", dqn_agent.net, reference_states, DEVICE, f"{phase_id}")
+    save_q_values("q_values/dqn", dqn_agent.online_net, reference_states, DEVICE, f"{phase_id}")
     env.close()
     return dqn_agent
 
