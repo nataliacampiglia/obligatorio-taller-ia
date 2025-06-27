@@ -13,6 +13,7 @@ from gymnasium.wrappers import (
     AtariPreprocessing,
     FrameStackObservation
 )
+from constants import (DQN_TYPE)
 
 def show_observation(observation):
     dimension = observation.shape
@@ -109,9 +110,9 @@ def make_env(
     
     return env
 
-def evaluate_training_phase_results(pathname="", phase_name=""): 
+def evaluate_training_phase_results(pathname="", phase_id="", type=DQN_TYPE): 
     graph_metrics(pathname)
-    plot_q_values_per_phase(phase_name)
+    plot_q_values_per_phase(phase_id, type)
 
 def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=True, show_actions=True, show_epsilons=True):
     """
@@ -182,23 +183,20 @@ def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=T
         plt.ylabel("Frecuencia")
         plt.legend()
         plt.grid(True)
-        plt.show()
-
+        plt.show() 
     
-    
-def load_q_values(filename, type='ddqn'):
+def load_q_values(filename, type='dqn'):
     path = os.path.join(f"q_values/{type}", f"{filename}.npz")
     data = np.load(path)
     return data['q_values']
 
-
-def plot_q_values_per_phase(phase_name):
-    q_values = load_q_values(phase_name)
+def plot_q_values_per_phase(phase_id, type):
+    q_values = load_q_values(phase_id, type)
     max_q_per_state = np.max(q_values, axis=1)
     
     plt.figure(figsize=(10,6))
     plt.plot(max_q_per_state)
-    plt.title(f"Curva de convergencia Q - {phase_name}")
+    plt.title(f"Curva de convergencia Q - {phase_id}")
     plt.xlabel("Estado de referencia")
     plt.ylabel("Q máximo")
     plt.grid(True)

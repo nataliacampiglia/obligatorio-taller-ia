@@ -44,6 +44,10 @@ BUFFER_SIZE = 50_000
 GAMMA = 0.995
 LEARNING_RATE = 1e-5
 
+# Tipos de Agentes DQN 
+DQN_TYPE = "dqn"
+DOUBLE_DQN_TYPE = "ddqn"
+
 
 # Ruta del modelo guardado
 METRICS_DIR = "metrics"
