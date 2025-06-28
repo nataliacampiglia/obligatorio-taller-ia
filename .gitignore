@@ -173,8 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-videos/*
+videos/reference_states
+videos/ddqn/*
 !videos/ddqn/validation
+videos/dqn/*
 !videos/dqn/validation
 
 .DS_Store
