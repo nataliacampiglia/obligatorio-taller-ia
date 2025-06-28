@@ -177,7 +177,7 @@ def graph_metrics(pathname="", show_rewards=True, show_losses=True, show_steps=T
     if show_actions:
         plt.figure(figsize=(10, 4))
         for i in range(actions.shape[1]):
-            plt.plot(actions[:, i], label=f"Acción {i}")
+            plt.plot(actions[:, i], label=f"Acción {i == 0 and 'NOOP' or i == 1 and 'FIRE' or i == 2 and 'RIGHT' or 'LEFT'}")
         plt.title("Distribución de Acciones por Episodio")
         plt.xlabel("Episodio")
         plt.ylabel("Frecuencia")
