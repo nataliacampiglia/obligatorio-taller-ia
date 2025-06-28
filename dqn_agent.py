@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from abstract_agent import Agent
 from replay_memory import ReplayMemory, PrioritizedReplayMemory, Transition
@@ -53,6 +54,8 @@ class DQNAgent(Agent):
         )
         # TO TRY: otra funcion de error
         self.loss_fn = nn.MSELoss()
+        # Loss function para memoria priorizada (sin reducción)
+        self.loss_fn_none = nn.MSELoss(reduction='none')
         
         # Configurar tipo de memoria de repetición
         self.use_prioritized_replay = use_prioritized_replay
@@ -154,7 +157,9 @@ class DQNAgent(Agent):
         if self.use_prioritized_replay:
             # Loss con pesos de importancia sampling para memoria priorizada
             td_errors = (q_target - q_current).detach().abs().cpu().numpy().flatten()
-            loss = (weights * self.loss_fn(q_current, q_target, reduction='none').squeeze()).mean()
+            # Usar loss_fn_none para obtener loss sin reducción
+            loss_per_sample = self.loss_fn_none(q_current, q_target).squeeze()
+            loss = (weights * loss_per_sample).mean()
             
             # Actualizar prioridades
             self.memory.update_priorities(indices, td_errors)

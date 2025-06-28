@@ -30,6 +30,7 @@ class DoubleDQNAgent(Agent):
 
         # Configurar función de pérdida MSE y optimizador Adam para online_net
         self.loss_fn = nn.MSELoss()
+        self.loss_fn_none = nn.MSELoss(reduction='none')
         self.optimizer = torch.optim.Adam(self.online_net.parameters(), lr=learning_rate)
       
         # Configurar tipo de memoria de repetición
@@ -127,7 +128,9 @@ class DoubleDQNAgent(Agent):
       if self.use_prioritized_replay:
           # Loss con pesos de importancia sampling para memoria priorizada
           td_errors = (target_q - q_current).detach().abs().cpu().numpy().flatten()
-          loss = (weights * self.loss_fn(q_current, target_q, reduction='none').squeeze()).mean()
+          # Usar loss_fn_none para obtener loss sin reducción
+          loss_per_sample = self.loss_fn_none(q_current, target_q).squeeze()
+          loss = (weights * loss_per_sample).mean()
           
           # Actualizar prioridades
           self.memory.update_priorities(indices, td_errors)
