@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from abstract_agent import Agent
-from replay_memory import ReplayMemory, Transition
+from replay_memory import ReplayMemory, PrioritizedReplayMemory, Transition
 import random
 
 
@@ -22,6 +22,11 @@ class DQNAgent(Agent):
         episode_block,
         device,
         run_name="dqn_run",
+        use_prioritized_replay=False,
+        prioritized_replay_alpha=0.6,
+        prioritized_replay_beta=0.4,
+        prioritized_replay_beta_increment=0.001,
+        prioritized_replay_epsilon=1e-6,
     ):
         super().__init__(
             env,
@@ -48,8 +53,21 @@ class DQNAgent(Agent):
         )
         # TO TRY: otra funcion de error
         self.loss_fn = nn.MSELoss()
-        # Crear replay memory de tamaño buffer_size
-        self.memory = ReplayMemory(memory_buffer_size)
+        
+        # Configurar tipo de memoria de repetición
+        self.use_prioritized_replay = use_prioritized_replay
+        if use_prioritized_replay:
+            self.memory = PrioritizedReplayMemory(
+                capacity=memory_buffer_size,
+                device=device,
+                alpha=prioritized_replay_alpha,
+                beta=prioritized_replay_beta,
+                beta_increment=prioritized_replay_beta_increment,
+                epsilon=prioritized_replay_epsilon
+            )
+        else:
+            self.memory = ReplayMemory(memory_buffer_size)
+            
         # Almacenar batch_size, gamma y parámetros de epsilon-greedy
         # TODO no se si se refiere a guardar con "almacenar"
         self.batch_size = batch_size
@@ -90,9 +108,17 @@ class DQNAgent(Agent):
         if len(self.memory) < self.batch_size:
             return
 
-        # 2) Muestrear minibatch y convertir a tensores (states, actions, rewards, dones, next_states)
-        # El muestreo aleatorio reduce correlaciones y estabiliza el aprendizaje
-        transitions = self.memory.sample(self.batch_size)
+        # 2) Muestrear minibatch según el tipo de memoria
+        if self.use_prioritized_replay:
+            # Muestreo priorizado
+            transitions, indices, weights = self.memory.sample(self.batch_size)
+            weights = torch.FloatTensor(weights).to(self.device)
+        else:
+            # Muestreo uniforme
+            transitions = self.memory.sample(self.batch_size)
+            indices = None
+            weights = None
+            
         batch = Transition(*zip(*transitions))
         # states, actions, reward, next_state, done = zip(transitions*)
 
@@ -124,9 +150,18 @@ class DQNAgent(Agent):
         # Objetivo de Bellman: recompensa inmediata + valor descontado del siguiente estado
         q_target = rewards + self.gamma * max_q_next
 
-        # 6) Computar loss MSE entre q_current y target, backprop y optimizer.step()
-        # Minimizar esta pérdida ajusta la red para aproximar la función Q óptima
-        loss = self.loss_fn(q_current, q_target)
+        # 6) Computar loss según el tipo de memoria
+        if self.use_prioritized_replay:
+            # Loss con pesos de importancia sampling para memoria priorizada
+            td_errors = (q_target - q_current).detach().abs().cpu().numpy().flatten()
+            loss = (weights * self.loss_fn(q_current, q_target, reduction='none').squeeze()).mean()
+            
+            # Actualizar prioridades
+            self.memory.update_priorities(indices, td_errors)
+        else:
+            # Loss estándar para memoria regular
+            loss = self.loss_fn(q_current, q_target)
+            
         self.optimizer.zero_grad()
         loss.backward()
         # Clipping de gradientes podría añadirse aquí para mayor estabilidad

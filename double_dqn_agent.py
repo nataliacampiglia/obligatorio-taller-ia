@@ -1,16 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from replay_memory import ReplayMemory, Transition
+from replay_memory import ReplayMemory, PrioritizedReplayMemory, Transition
 import numpy as np
 from abstract_agent import Agent
 import random
 
 class DoubleDQNAgent(Agent):
     def __init__(self, gym_env, model_a, model_b, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, sync_target = 1000, run_name="dqn_run", use_clip=True):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, sync_target = 1000, run_name="dqn_run", use_clip=True,
+                 use_prioritized_replay=False, prioritized_replay_alpha=0.6, prioritized_replay_beta=0.4, 
+                 prioritized_replay_beta_increment=0.001, prioritized_replay_epsilon=1e-6):
         
-        super().__init__(gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, run_name)
+        super().__init__(gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device, run_name,
+                        use_prioritized_replay=use_prioritized_replay, prioritized_replay_alpha=prioritized_replay_alpha,
+                        prioritized_replay_beta=prioritized_replay_beta, prioritized_replay_beta_increment=prioritized_replay_beta_increment,
+                        prioritized_replay_epsilon=prioritized_replay_epsilon)
         # Guardar entorno y función de preprocesamiento
         self.env = gym_env
         self.obs_processing_func = obs_processing_func
@@ -27,8 +32,19 @@ class DoubleDQNAgent(Agent):
         self.loss_fn = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.online_net.parameters(), lr=learning_rate)
       
-        # Crear replay memory de tamaño buffer_size
-        self.memory = ReplayMemory(memory_buffer_size)
+        # Configurar tipo de memoria de repetición
+        self.use_prioritized_replay = use_prioritized_replay
+        if use_prioritized_replay:
+            self.memory = PrioritizedReplayMemory(
+                capacity=memory_buffer_size,
+                device=device,
+                alpha=prioritized_replay_alpha,
+                beta=prioritized_replay_beta,
+                beta_increment=prioritized_replay_beta_increment,
+                epsilon=prioritized_replay_epsilon
+            )
+        else:
+            self.memory = ReplayMemory(memory_buffer_size)
 
         # Almacenar batch_size, gamma, parámetros de epsilon y sync_target
         self.batch_size = batch_size
@@ -73,8 +89,17 @@ class DoubleDQNAgent(Agent):
       if len(self.memory) < self.batch_size:
         return
       
-      # 2) Muestrear minibatch y convertir estados, acciones, recompensas, dones y next_states a tensores
-      transitions = self.memory.sample(self.batch_size)
+      # 2) Muestrear minibatch según el tipo de memoria
+      if self.use_prioritized_replay:
+          # Muestreo priorizado
+          transitions, indices, weights = self.memory.sample(self.batch_size)
+          weights = torch.FloatTensor(weights).to(self.device)
+      else:
+          # Muestreo uniforme
+          transitions = self.memory.sample(self.batch_size)
+          indices = None
+          weights = None
+          
       batch = Transition(*zip(*transitions))
 
       states = torch.stack(batch.state).to(self.device)
@@ -97,8 +122,19 @@ class DoubleDQNAgent(Agent):
        
      # c) Calculamos el target: r + gamma * Q_target * (1 - done)
       target_q = rewards + self.gamma * q_next
-      # 5) Computar loss MSE entre q_current y target_q, backprop y optimizer.step()
-      loss = self.loss_fn(q_current, target_q)
+      
+      # 5) Computar loss según el tipo de memoria
+      if self.use_prioritized_replay:
+          # Loss con pesos de importancia sampling para memoria priorizada
+          td_errors = (target_q - q_current).detach().abs().cpu().numpy().flatten()
+          loss = (weights * self.loss_fn(q_current, target_q, reduction='none').squeeze()).mean()
+          
+          # Actualizar prioridades
+          self.memory.update_priorities(indices, td_errors)
+      else:
+          # Loss estándar para memoria regular
+          loss = self.loss_fn(q_current, target_q)
+          
       self.optimizer.zero_grad()
       loss.backward()
       
