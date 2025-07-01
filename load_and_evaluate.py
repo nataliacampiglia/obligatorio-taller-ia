@@ -112,7 +112,14 @@ def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, tota
     env.close()
     return dqn_agent
 
-def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_ini = EPSILON_INI, epsilon_min = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS):
+def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_ini = EPSILON_INI, epsilon_min = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS, gamma=GAMMA):
+    print("Parametros del agente:")
+    print(f"loadPath: {load_net_path}")
+    print(f"gamma: {gamma}")
+    print(f"epsilon_i: {epsilon_ini}")
+    print(f"epsilon_f: {epsilon_min}")
+    print(f"epsilon_anneal_steps: {epsilon_anneal_steps}")
+    print(f"run_name: {phase_id}")
     video_folder = f'./videos/ddqn/{phase_id}'
     env = create_env(video_folder=video_folder)
     # Capturar los estados referentes p-ara visualizar la convergencia de los valores de Q
@@ -120,7 +127,7 @@ def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None
     if(load_net_path is not None):
         modelo_a.load_state_dict(torch.load(load_net_path))
     modelo_b = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
-    ddqn_agent = DoubleDQNAgent(env, modelo_a, modelo_b, process_state, BUFFER_SIZE, BATCH_SIZE, LEARNING_RATE, GAMMA, epsilon_i= epsilon_ini, epsilon_f=epsilon_min, epsilon_anneal_steps=epsilon_anneal_steps, episode_block = EPISODE_BLOCK, device=DEVICE, run_name=phase_id)
+    ddqn_agent = DoubleDQNAgent(env, modelo_a, modelo_b, process_state, BUFFER_SIZE, BATCH_SIZE, LEARNING_RATE, gamma=gamma, epsilon_i= epsilon_ini, epsilon_f=epsilon_min, epsilon_anneal_steps=epsilon_anneal_steps, episode_block = EPISODE_BLOCK, device=DEVICE, run_name=phase_id)
     ddqn_agent.train(episodes, STEPS_PER_EPISODE, total_steps)
     save_q_values("q_values/ddqn", ddqn_agent.online_net, reference_states, DEVICE, f"{phase_id}")
     env.close()
