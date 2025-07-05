@@ -137,15 +137,25 @@ def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None
 def execute_agent_play(agent, phase_id, type=DQN_TYPE):
     VALIDATION_VIDEO_FOLDER = f'./videos/{type}/validation/{phase_id}'
     # create env
-    env = create_env(video_folder=VALIDATION_VIDEO_FOLDER)
-    # play
-    agent.play(env, episodes=1)
+    if agent:
+        env = create_env(video_folder=VALIDATION_VIDEO_FOLDER)
+        # play
+        agent.play(env, episodes=1)
 
-    env.close()
+        env.close()
 
     # Ruta al archivo de vídeo en tu sistema de ficheros
     video_path = f"{VALIDATION_VIDEO_FOLDER}/breakout-episode-0.mp4"
     return video_path
+
+def getVideoFolder(phase_id, type=DQN_TYPE):
+    return f'./videos/{type}/validation/{phase_id}'
+
+
+def getVideoPath(phase_id, type=DQN_TYPE):
+    VALIDATION_VIDEO_FOLDER = getVideoFolder(phase_id, type=type)
+    return f"{VALIDATION_VIDEO_FOLDER}/breakout-episode-0.mp4"
+
    
 
 
