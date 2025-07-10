@@ -90,7 +90,7 @@ def getGenericDataDir(isDQN):
 
 def getCommonDataFilePath(isDQN):
     dirPath = getGenericDataDir(isDQN)
-    return f"{dirPath}/GenericDQNAgent-"
+    return f"{dirPath}/{f'GenericDQNAgent-' if isDQN else 'GenericDDQNAgent-'}"
 
 def getGenericDataFilePath(isDQN, run_name):
     filePath = getCommonDataFilePath(isDQN)
