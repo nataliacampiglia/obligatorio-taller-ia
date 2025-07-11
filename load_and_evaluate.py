@@ -113,7 +113,7 @@ def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, tota
     env.close()
     return dqn_agent
 
-def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_ini = EPSILON_INI, epsilon_min = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS, gamma=GAMMA):
+def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_ini = EPSILON_INI, epsilon_min = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS, gamma=GAMMA, learning_rate=LEARNING_RATE):
     print("Parametros del agente:")
     print(f"loadPath: {load_net_path}")
     print(f"gamma: {gamma}")
@@ -128,20 +128,21 @@ def execute_ddqn_training_phase(phase_id, reference_states, load_net_path = None
     if(load_net_path is not None):
         modelo_a.load_state_dict(torch.load(load_net_path))
     modelo_b = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
-    ddqn_agent = DoubleDQNAgent(env, modelo_a, modelo_b, process_state, BUFFER_SIZE, BATCH_SIZE, LEARNING_RATE, gamma=gamma, epsilon_i= epsilon_ini, epsilon_f=epsilon_min, epsilon_anneal_steps=epsilon_anneal_steps, episode_block = EPISODE_BLOCK, device=DEVICE, run_name=phase_id)
+    ddqn_agent = DoubleDQNAgent(env, modelo_a, modelo_b, process_state, BUFFER_SIZE, BATCH_SIZE, learning_rate=learning_rate, gamma=gamma, epsilon_i= epsilon_ini, epsilon_f=epsilon_min, epsilon_anneal_steps=epsilon_anneal_steps, episode_block = EPISODE_BLOCK, device=DEVICE, run_name=phase_id)
     ddqn_agent.train(episodes, STEPS_PER_EPISODE, total_steps)
     save_q_values("q_values/ddqn", ddqn_agent.online_net, reference_states, DEVICE, f"{phase_id}")
     env.close()
     return ddqn_agent
 
-def execute_agent_play(agent, phase_id, type=DQN_TYPE):
+def execute_agent_play(agent, phase_id, type=DQN_TYPE, play=True):
     VALIDATION_VIDEO_FOLDER = f'./videos/{type}/validation/{phase_id}'
-    # create env
-    if agent:
+    
+    if(play):
+        # create env
         env = create_env(video_folder=VALIDATION_VIDEO_FOLDER)
         # play
+        print(f"Ejecutando el agente {type} en modo evaluación...")
         agent.play(env, episodes=1)
-
         env.close()
 
     # Ruta al archivo de vídeo en tu sistema de ficheros
