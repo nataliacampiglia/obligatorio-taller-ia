@@ -22,6 +22,7 @@ class DQNAgent(Agent):
         episode_block,
         device,
         run_name="dqn_run",
+        adaptive_epsilon=False,
     ):
         super().__init__(
             env,
@@ -36,6 +37,7 @@ class DQNAgent(Agent):
             episode_block,
             device,
             run_name="dqn_run",
+            adaptive_epsilon=adaptive_epsilon,
         )
         # Guardar entorno y función de preprocesamiento
         self.env = env

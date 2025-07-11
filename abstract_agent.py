@@ -9,13 +9,13 @@ from tqdm import tqdm
 import random
 from datetime import datetime
 
-from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT_DIR, DQN_COMMON_MODEL_PATH,
+from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT_DIR, DQN_COMMON_MODEL_PATH, EPSILON_ADAPTIVE_PATIENCE, EPSILON_ADAPTIVE_INCREASE, EPSILON_ADAPTIVE_DECREASE,
                     getMetricsDir, getMetricFilePath, getGenericDataFilePath
 )
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None, adaptive_epsilon=False):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -43,6 +43,16 @@ class Agent(ABC):
 
         self.total_steps = 0
         self.all_actions = []
+
+        # Variables de control para la implementación de epsilon adaptativo
+        self.adaptive_epsilon = adaptive_epsilon
+        self.best_reward = -float('inf')
+        self.no_improvement_episodes = 0
+        self.patience = EPSILON_ADAPTIVE_PATIENCE # Numero de episodios sin mejorar antes de aumentar epsilon
+        self.epsilon_increase = EPSILON_ADAPTIVE_INCREASE
+        self.epsilon_decrease = EPSILON_ADAPTIVE_DECREASE
+        self.epsilon_min = self.epsilon_f
+        self.epsilon_max = self.epsilon_i
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
@@ -121,9 +131,26 @@ class Agent(ABC):
         action_distribution = [counter.get(i, 0) for i in range(self.env.action_space.n)]
         self.all_actions.append(action_distribution)
 
-        epsilon = self.compute_epsilon(total_steps)
         reward = np.mean(rewards[-self.episode_block:])
         mean_rewards.append(reward)
+
+        # Implementación de epsilon adaptativo
+        if self.adaptive_epsilon:
+            if reward > self.best_reward:
+                print(f"Reduciendo epsilon: Recompensa actual: {reward}, Epsilon: {self.epsilon_i}, Total steps: {total_steps}")
+                self.best_reward = reward
+                self.no_improvement_episodes = 0
+                # Reduce epsilon (más explotación)
+                self.epsilon_i = max(self.epsilon_i - self.epsilon_decrease, self.epsilon_min)
+            else:
+                print(f"Aumentando epsilon: Recompensa actual: {reward}, Epsilon: {self.epsilon_i}, Total steps: {total_steps}")
+                self.no_improvement_episodes += 1
+                if self.no_improvement_episodes >= self.patience:
+                    # Aumenta epsilon (más exploración)
+                    self.epsilon_i = min(self.epsilon_i + self.epsilon_increase, self.epsilon_max)
+                    self.no_improvement_episodes = 0
+        
+        epsilon = self.compute_epsilon(total_steps)
 
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
@@ -187,8 +214,6 @@ class Agent(ABC):
         else:
             epsilon = self.epsilon_f
         return epsilon
-        
-    
     def play(self, env, episodes=1):
         """
         Modo evaluación: ejecutar episodios sin actualizar la red.

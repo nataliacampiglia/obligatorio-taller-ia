@@ -47,7 +47,7 @@ def create_env(video_folder='./videos/dqn_training'):
 
 
 def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE, gamma=GAMMA,
-                    epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, run_name="run"):
+                    epsilon_i=EPSILON_INI, epsilon_f=EPSILON_MIN,epsilon_anneal_steps= EPSILON_ANNEAL_STEPS, episode_block=EPISODE_BLOCK, run_name="run", adaptive_epsilon=False):
     ### Creamos la policy_net
     net = DQN_CNN_Model(env.observation_space.shape, env.action_space.n).to(DEVICE)
 
@@ -71,7 +71,7 @@ def load_dqn_agent(env,loadPath=None, buffer_size=BUFFER_SIZE, batch_size=BATCH_
     print(f"run_name: {run_name}")
 
   # obtener DQN AGENT
-    dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE, run_name=run_name)
+    dqn_agent = DQNAgent(env, net, process_state, buffer_size, batch_size, learning_rate, gamma, epsilon_i, epsilon_f,epsilon_anneal_steps, episode_block, device=DEVICE, run_name=run_name, adaptive_epsilon=adaptive_epsilon)
     return dqn_agent
 
 def create_reference_states():
@@ -103,10 +103,10 @@ def save_q_values(q_values_dir, policy_net, reference_states, device, filename):
         np.savez(savePath, q_values=q_values)
 
 
-def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_i = EPSILON_INI, epsilon_f = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS, gamma=GAMMA):
+def execute_dqn_training_phase(phase_id, reference_states, loadPath = None, total_steps = TOTAL_STEPS, episodes = EPISODES, epsilon_i = EPSILON_INI, epsilon_f = EPSILON_MIN, epsilon_anneal_steps = EPSILON_ANNEAL_STEPS, gamma=GAMMA, adaptive_epsilon=False):
     video_folder = f'./videos/dqn/{phase_id}'
     env = create_env(video_folder=video_folder)
-    dqn_agent = load_dqn_agent(env, loadPath=loadPath, epsilon_i=epsilon_i, epsilon_f=epsilon_f, epsilon_anneal_steps=epsilon_anneal_steps, episode_block=EPISODE_BLOCK, run_name=phase_id, gamma=gamma)
+    dqn_agent = load_dqn_agent(env, loadPath=loadPath, epsilon_i=epsilon_i, epsilon_f=epsilon_f, epsilon_anneal_steps=epsilon_anneal_steps, episode_block=EPISODE_BLOCK, run_name=phase_id, gamma=gamma, adaptive_epsilon=adaptive_epsilon)
     dqn_agent.train(episodes, STEPS_PER_EPISODE, total_steps)
     save_q_values("q_values/dqn", dqn_agent.policy_net, reference_states, DEVICE, f"{phase_id}")
     env.close()
