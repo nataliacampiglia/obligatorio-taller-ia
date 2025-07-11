@@ -137,13 +137,11 @@ class Agent(ABC):
         # Implementación de epsilon adaptativo
         if self.adaptive_epsilon:
             if reward > self.best_reward:
-                print(f"Reduciendo epsilon: Recompensa actual: {reward}, Epsilon: {self.epsilon_i}, Total steps: {total_steps}")
                 self.best_reward = reward
                 self.no_improvement_episodes = 0
                 # Reduce epsilon (más explotación)
                 self.epsilon_i = max(self.epsilon_i - self.epsilon_decrease, self.epsilon_min)
             else:
-                print(f"Aumentando epsilon: Recompensa actual: {reward}, Epsilon: {self.epsilon_i}, Total steps: {total_steps}")
                 self.no_improvement_episodes += 1
                 if self.no_improvement_episodes >= self.patience:
                     # Aumenta epsilon (más exploración)
