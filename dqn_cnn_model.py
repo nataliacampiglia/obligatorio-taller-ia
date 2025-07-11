@@ -41,7 +41,7 @@ class DQN_CNN_Model(nn.Module):
         - 1 capa fully-connected intermedia de 256 unidades
         - 1 capa de salida con un Q-value por acción
         """
-        super(DQN_CNN_Model, self).__init__()
+        super().__init__()
 
         # Desempaquetar canales y dimensiones
         in_channels, h, w = obs_shape
