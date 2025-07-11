@@ -2,7 +2,7 @@ import os
 import torch
 import torch.nn as nn
 import numpy as np
-from replay_memory import ReplayMemory
+from replay_memory import ReplayMemory, PrioritizedReplayMemory
 from collections import Counter
 from abc import ABC, abstractmethod
 from tqdm import tqdm
@@ -15,14 +15,27 @@ from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT
 
 class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
-                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None):
+                 epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None,
+                 use_prioritized_replay=False, prioritized_replay_alpha=0.6, prioritized_replay_beta=0.4, 
+                 prioritized_replay_beta_increment=0.001, prioritized_replay_epsilon=1e-6):
         self.device = device
 
         # Funcion phi para procesar los estados.
         self.state_processing_function = obs_processing_func
 
-        # Asignarle memoria al agente 
-        self.memory = ReplayMemory(memory_buffer_size)
+        # Configurar tipo de memoria de repetición
+        self.use_prioritized_replay = use_prioritized_replay
+        if use_prioritized_replay:
+            self.memory = PrioritizedReplayMemory(
+                capacity=memory_buffer_size,
+                device=device,
+                alpha=prioritized_replay_alpha,
+                beta=prioritized_replay_beta,
+                beta_increment=prioritized_replay_beta_increment,
+                epsilon=prioritized_replay_epsilon
+            )
+        else:
+            self.memory = ReplayMemory(memory_buffer_size)
 
         self.env = gym_env
 
