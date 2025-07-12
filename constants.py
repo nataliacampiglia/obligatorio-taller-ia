@@ -95,3 +95,11 @@ def getCommonDataFilePath(isDQN):
 def getGenericDataFilePath(isDQN, run_name):
     filePath = getCommonDataFilePath(isDQN)
     return f"{filePath}{run_name}.dat"
+
+def getMetricFilePathList(isDQN, phase_ids):
+    filesPath = []
+    print(phase_ids)
+    for path_id in phase_ids:
+        filePath = getMetricFilePath(isDQN, path_id)
+        filesPath.append(filePath)
+    return filesPath
