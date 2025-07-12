@@ -1,4 +1,3 @@
-
 # Funciones:
 
 A continuacion describiremos las funciones a utilizar
@@ -17,4 +16,27 @@ A continuacion describiremos las funciones a utilizar
 
 ## Agente
 
-Vamos a definir una clase agente (abstracto), encargado de interactuar con el ambiente y entrenar los modelos. Los métdos definidos deben funcionar para ambos problemas simplemente cambiando el modelo a utilizar para cada ambiente.  El agente será definido usando la funcion `load_dqn_agent`
+Se defin la clase agente (abstracto), encargado de interactuar con el ambiente y entrenar los modelos. Los métdos definidos deben funcionar para ambos problemas simplemente cambiando el modelo a utilizar para cada ambiente.  El agente será definido usando las funciones `load_dqn_agent` y `execute_ddqn_training_phase` para los modelos DQN y DDQN respectivamente.
+
+### Funciones implementadas:
+
+1. **`__init__`**: Inicializa los parámetros del agente, incluyendo la función de procesamiento de estados (phi), configuración de la replay memory que podra ser normal o priorizada, asignación de hiperparámetros de aprendizaje (gamma, epsilon, learning rate), y los parámetros de entrenamiento (batch size, episode block, checkpoint frequency).
+
+2. **`compute_epsilon`**: Calcula el valor actual de epsilon basado en el número de pasos transcurridos. Implementa un decaimiento lineal desde epsilon inicial hasta epsilon final durante los pasos de annealing, manteniendo el valor final después de alcanzar el límite.
+
+3. **`select_action`**: Método abstracto que debe ser implementado por las subclases. Selecciona acciones de forma epsilon-greedy durante el entrenamiento (train=True) y de forma completamente greedy durante la evaluación (train=False).
+
+4. **`train`**: Entrena el agente por un número dado de episodios con longitud determinada. Implementa el bucle principal de entrenamiento: selección de acciones, ejecución en el entorno, almacenamiento de transiciones en memoria, actualización de pesos, y registro de métricas. Incluye funcionalidad de checkpoint y guardado de modelos.
+
+5. **`play`**: Permite grabar episodios de evaluación donde el agente siempre selecciona la mejor acción conocida (modo greedy). No actualiza los pesos de la red durante la ejecución.
+
+6. **`update_weights`**: Método abstracto que debe ser implementado por las subclases para definir la lógica específica de actualización de pesos según el algoritmo DQN o DDQN.
+
+
+
+
+
+
+
+
+
