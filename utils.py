@@ -231,15 +231,17 @@ def q_values_summary(phase_names):
     return summary
 
 
-def graph_metrics_accumulated(paths, show_rewards=True, show_losses=True, show_steps=True, show_actions=True, show_epsilons=True):
+def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses=True, show_steps=True, show_epsilons=True):
     """
     Genera gráficos acumulados de rewards, losses, steps y epsilons 
     a partir de múltiples archivos npz.
 
     Args:
-        paths (list): Lista de rutas a archivos .npz con keys: 'rewards', 'losses', 'steps', 'epsilons'
+        paths (list): Lista de rutas a archivos .npz.
+        phases (list): Lista de nombres para cada fase (opcional).
     """
     plt.close('all')
+
     all_rewards = []
     all_losses = []
     all_steps = []
@@ -256,8 +258,7 @@ def graph_metrics_accumulated(paths, show_rewards=True, show_losses=True, show_s
         num_episodes = len(rewards)
         episodes = np.arange(episode_offset, episode_offset + num_episodes)
 
-        all_rewards.append(rewards)
-        # all_rewards.append((episodes, rewards))
+        all_rewards.append((episodes, rewards))
         all_losses.append((episodes, losses))
         all_steps.append((episodes, steps))
         all_epsilons.append((episodes, epsilons))
@@ -266,46 +267,54 @@ def graph_metrics_accumulated(paths, show_rewards=True, show_losses=True, show_s
 
     if show_rewards:
         plt.figure(figsize=(10, 4))
-        plt.plot(all_rewards)
+        for idx, (episodes, rewards) in enumerate(all_rewards):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, rewards, label=label)
         plt.title("Recompensa por Episodio")
         plt.xlabel("Episodio")
         plt.ylabel("Recompensa")
         plt.grid(True)
+        plt.legend()
         plt.show()
-    # plt.figure(figsize=(10, 4))
-    # for episodes, rewards in all_rewards:
-    #     plt.plot(episodes, rewards, label='Rewards')
-    # plt.title('Rewards')
-    # plt.xlabel('Episodes')
-    # plt.ylabel('Reward')
-    # plt.grid()
-    # plt.show()
+        plt.close()
+    
+    if show_epsilons:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, epsilons) in enumerate(all_epsilons):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, epsilons, label=label)
+        plt.title("Epsilon por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
 
-    # plt.figure(figsize=(10, 4))
-    # for episodes, losses in all_losses:
-    #     plt.plot(episodes, losses, label='Losses')
-    # plt.title('Losses')
-    # plt.xlabel('Episodes')
-    # plt.ylabel('Loss')
-    # plt.grid()
-    # plt.show()
+    if show_losses:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, losses) in enumerate(all_losses):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, losses, label=label)
+        plt.title("Loss por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Loss")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
 
-    # plt.figure(figsize=(10, 4))
-    # for episodes, steps in all_steps:
-    #     plt.plot(episodes, steps, label='Steps')
-    # plt.title('Steps per Episode')
-    # plt.xlabel('Episodes')
-    # plt.ylabel('Steps')
-    # plt.grid()
-    # plt.show()
+    if show_steps:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, steps) in enumerate(all_steps):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, steps, label=label)
+        plt.title("Steps por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Steps")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
 
-    # plt.figure(figsize=(10, 4))
-    # for episodes, epsilons in all_epsilons:
-    #     plt.plot(episodes, epsilons, label='Epsilons')
-    # plt.title('Epsilon Values')
-    # plt.xlabel('Episodes')
-    # plt.ylabel('Epsilon')
-    # plt.grid()
-    # plt.show()
-    plt.close()
-
+    
