@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from SimpleAttention import SimpleAttention
 
 def conv2d_output_shape(
     input_size: tuple[int, int],
@@ -34,7 +35,7 @@ def conv2d_output_shape(
 
 
 class DQN_CNN_Model(nn.Module):
-    def __init__(self,  obs_shape, n_actions):
+    def __init__(self,  obs_shape, n_actions, use_attention=False):
         """
         CNN según Mnih et al. (2013):
         - 2 capas convolucionales (16 @ 8×8/4 y 32 @ 4×4/2)
@@ -64,6 +65,12 @@ class DQN_CNN_Model(nn.Module):
         # Impacto: convierte mapas de características en un vector que sintetiza toda la información.
         self.fc = nn.Linear(flattened_size, 256)
 
+        # Capa de atención
+        # Impacto: mejora la selección de características relevantes para la estimación de Q-values.
+        self.use_attention = use_attention
+        if use_attention:
+            self.attention = SimpleAttention(256)
+
         # Capa de salida con un Q-value por cada acción posible. Cada neurona estima el valor futuro esperado de tomar su acción correspondiente
         # Impacto: produce el vector de Q-values que guiará la política ε-greedy.
         self.out = nn.Linear(256, n_actions)
@@ -87,6 +94,10 @@ class DQN_CNN_Model(nn.Module):
         # 3) Transformación no lineal en espacio de características
         x = F.relu(self.fc(x))
 
-        # 4) Capa final sin activación
+        # 4) Capa de atención
+        if self.use_attention:
+            x = self.attention(x)
+
+        # 5) Capa final sin activación
         q_values = self.out(x)       # Devuelve un Q-value por acción, sin escalamiento
         return q_values

@@ -68,10 +68,10 @@ DDQN_COMMON_MODEL_PATH = F"{DDQN_NET_HISTORY_DIR}/GenericDDQNAgent-"
 MODEL_PATH = "net_history/GenericDQNAgent.dat"  # Cambiar si se usa timestamp
 PHASE1_MODEL_PATH = "net_history/GenericDQNAgent_phase1.dat" 
 
-# Constantes de epsilon adaptativo
-EPSILON_ADAPTIVE_PATIENCE = 20 
-EPSILON_ADAPTIVE_INCREASE = 0.05
-EPSILON_ADAPTIVE_DECREASE = 0.01
+# Epsilon adaptativo como factor multiplicativo
+EPSILON_ADAPTIVE_PATIENCE = 20  # Más episodios antes de aumentar exploración
+EPSILON_ADAPTIVE_INCREASE = 1.1  # Multiplicador para aumentar (10% más)
+EPSILON_ADAPTIVE_DECREASE = 0.95  # Multiplicador para disminuir (5% menos)
 
 
 def getMetricsDir(isDQN):
