@@ -53,6 +53,8 @@ class Agent(ABC):
         self.epsilon_decrease = EPSILON_ADAPTIVE_DECREASE
         self.epsilon_min = self.epsilon_f
         self.epsilon_max = self.epsilon_i
+        # Epsilon adaptativo separado del epsilon base
+        self.adaptive_epsilon_value = self.epsilon_i
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
@@ -140,13 +142,18 @@ class Agent(ABC):
                 self.best_reward = reward
                 self.no_improvement_episodes = 0
                 # Reduce epsilon (más explotación)
-                self.epsilon_i = max(self.epsilon_i - self.epsilon_decrease, self.epsilon_min)
+                old_epsilon = self.adaptive_epsilon_value
+                self.adaptive_epsilon_value = max(self.adaptive_epsilon_value - self.epsilon_decrease, self.epsilon_min)
+                if old_epsilon != self.adaptive_epsilon_value:
+                    print(f"Epsilon adaptativo reducido: {old_epsilon:.4f} -> {self.adaptive_epsilon_value:.4f} (mejor recompensa: {reward:.2f})")
             else:
                 self.no_improvement_episodes += 1
                 if self.no_improvement_episodes >= self.patience:
                     # Aumenta epsilon (más exploración)
-                    self.epsilon_i = min(self.epsilon_i + self.epsilon_increase, self.epsilon_max)
+                    old_epsilon = self.adaptive_epsilon_value
+                    self.adaptive_epsilon_value = min(self.adaptive_epsilon_value + self.epsilon_increase, self.epsilon_max)
                     self.no_improvement_episodes = 0
+                    print(f"Epsilon adaptativo aumentado: {old_epsilon:.4f} -> {self.adaptive_epsilon_value:.4f} (sin mejora por {self.patience} episodios)")
         
         epsilon = self.compute_epsilon(total_steps)
 
@@ -207,11 +214,16 @@ class Agent(ABC):
         """
         Compute el valor de epsilon a partir del número de pasos dados hasta ahora.
         """
-        if steps_so_far < self.epsilon_anneal_steps:
-            epsilon = self.epsilon_i - (self.epsilon_i - self.epsilon_f) * (steps_so_far / self.epsilon_anneal_steps)
+        if self.adaptive_epsilon:
+            # Si está habilitado el epsilon adaptativo, usar el valor adaptativo
+            return self.adaptive_epsilon_value
         else:
-            epsilon = self.epsilon_f
-        return epsilon
+            # Comportamiento normal de epsilon annealing
+            if steps_so_far < self.epsilon_anneal_steps:
+                epsilon = self.epsilon_i - (self.epsilon_i - self.epsilon_f) * (steps_so_far / self.epsilon_anneal_steps)
+            else:
+                epsilon = self.epsilon_f
+            return epsilon
     def play(self, env, episodes=1):
         """
         Modo evaluación: ejecutar episodios sin actualizar la red.
