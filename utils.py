@@ -229,3 +229,92 @@ def q_values_summary(phase_names):
             'max': np.max(max_q_per_state),
         }
     return summary
+
+
+def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses=True, show_steps=True, show_epsilons=True):
+    """
+    Genera gráficos acumulados de rewards, losses, steps y epsilons 
+    a partir de múltiples archivos npz.
+
+    Args:
+        paths (list): Lista de rutas a archivos .npz.
+        phases (list): Lista de nombres para cada fase (opcional).
+    """
+    plt.close('all')
+
+    all_rewards = []
+    all_losses = []
+    all_steps = []
+    all_epsilons = []
+    episode_offset = 0
+
+    for path in paths:
+        data = np.load(path)
+        rewards = data['rewards']
+        losses = data['losses']
+        steps = data['steps']
+        epsilons = data['epsilons']
+
+        num_episodes = len(rewards)
+        episodes = np.arange(episode_offset, episode_offset + num_episodes)
+
+        all_rewards.append((episodes, rewards))
+        all_losses.append((episodes, losses))
+        all_steps.append((episodes, steps))
+        all_epsilons.append((episodes, epsilons))
+
+        episode_offset += num_episodes
+
+    if show_rewards:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, rewards) in enumerate(all_rewards):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, rewards, label=label)
+        plt.title("Recompensa por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Recompensa")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+    
+    if show_epsilons:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, epsilons) in enumerate(all_epsilons):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, epsilons, label=label)
+        plt.title("Epsilon por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    if show_losses:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, losses) in enumerate(all_losses):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, losses, label=label)
+        plt.title("Loss por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Loss")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    if show_steps:
+        plt.figure(figsize=(10, 4))
+        for idx, (episodes, steps) in enumerate(all_steps):
+            label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
+            plt.plot(episodes, steps, label=label)
+        plt.title("Steps por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Steps")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    
