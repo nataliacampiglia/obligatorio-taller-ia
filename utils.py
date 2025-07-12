@@ -229,3 +229,83 @@ def q_values_summary(phase_names):
             'max': np.max(max_q_per_state),
         }
     return summary
+
+
+def graph_metrics_accumulated(paths, show_rewards=True, show_losses=True, show_steps=True, show_actions=True, show_epsilons=True):
+    """
+    Genera gráficos acumulados de rewards, losses, steps y epsilons 
+    a partir de múltiples archivos npz.
+
+    Args:
+        paths (list): Lista de rutas a archivos .npz con keys: 'rewards', 'losses', 'steps', 'epsilons'
+    """
+    plt.close('all')
+    all_rewards = []
+    all_losses = []
+    all_steps = []
+    all_epsilons = []
+    episode_offset = 0
+
+    for path in paths:
+        data = np.load(path)
+        rewards = data['rewards']
+        losses = data['losses']
+        steps = data['steps']
+        epsilons = data['epsilons']
+
+        num_episodes = len(rewards)
+        episodes = np.arange(episode_offset, episode_offset + num_episodes)
+
+        all_rewards.append(rewards)
+        # all_rewards.append((episodes, rewards))
+        all_losses.append((episodes, losses))
+        all_steps.append((episodes, steps))
+        all_epsilons.append((episodes, epsilons))
+
+        episode_offset += num_episodes
+
+    if show_rewards:
+        plt.figure(figsize=(10, 4))
+        plt.plot(all_rewards)
+        plt.title("Recompensa por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Recompensa")
+        plt.grid(True)
+        plt.show()
+    # plt.figure(figsize=(10, 4))
+    # for episodes, rewards in all_rewards:
+    #     plt.plot(episodes, rewards, label='Rewards')
+    # plt.title('Rewards')
+    # plt.xlabel('Episodes')
+    # plt.ylabel('Reward')
+    # plt.grid()
+    # plt.show()
+
+    # plt.figure(figsize=(10, 4))
+    # for episodes, losses in all_losses:
+    #     plt.plot(episodes, losses, label='Losses')
+    # plt.title('Losses')
+    # plt.xlabel('Episodes')
+    # plt.ylabel('Loss')
+    # plt.grid()
+    # plt.show()
+
+    # plt.figure(figsize=(10, 4))
+    # for episodes, steps in all_steps:
+    #     plt.plot(episodes, steps, label='Steps')
+    # plt.title('Steps per Episode')
+    # plt.xlabel('Episodes')
+    # plt.ylabel('Steps')
+    # plt.grid()
+    # plt.show()
+
+    # plt.figure(figsize=(10, 4))
+    # for episodes, epsilons in all_epsilons:
+    #     plt.plot(episodes, epsilons, label='Epsilons')
+    # plt.title('Epsilon Values')
+    # plt.xlabel('Episodes')
+    # plt.ylabel('Epsilon')
+    # plt.grid()
+    # plt.show()
+    plt.close()
+
