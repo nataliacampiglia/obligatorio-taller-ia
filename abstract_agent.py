@@ -145,7 +145,7 @@ class Agent(ABC):
         action_distribution = [counter.get(i, 0) for i in range(self.env.action_space.n)]
         self.all_actions.append(action_distribution)
 
-        epsilon = self.compute_epsilon(total_steps)
+   
         reward = np.mean(rewards[-self.episode_block:])
         mean_rewards.append(reward)
 
@@ -172,7 +172,8 @@ class Agent(ABC):
                     self.adaptive_epsilon_value = min(self.adaptive_epsilon_value * self.epsilon_increase, 2.0)
                     self.no_improvement_episodes = 0
                     print(f"[ADAPT-EPS ↑] Epsilon aumentado: {old_epsilon:.4f} → {self.adaptive_epsilon_value:.4f} | Estancado por {self.patience} episodios")
-
+        
+        epsilon = self.compute_epsilon(total_steps)
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
         epsilons.append(epsilon)
@@ -239,7 +240,7 @@ class Agent(ABC):
         if self.adaptive_epsilon:
             # Combinar epsilon base con el factor adaptativo
             # El adaptativo actúa como un multiplicador o offset
-            epsilon_final = max(epsilon_base * self.adaptive_epsilon_value, self.epsilon_min)
+            epsilon_final = np.clip(epsilon_base * self.adaptive_epsilon_value, self.epsilon_min, self.epsilon_max - 0.05)
             return epsilon_final
         else:
             return epsilon_base
