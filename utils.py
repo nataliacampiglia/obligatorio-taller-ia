@@ -230,6 +230,24 @@ def q_values_summary(phase_names):
         }
     return summary
 
+def collect_metrics(paths):
+    all_rewards, all_losses, all_steps, all_epsilons = [], [], [], []
+    episode_offset = 0
+    for path in paths:
+        data = np.load(path)
+        rewards = data['rewards']
+        losses = data['losses']
+        steps = data['steps']
+        epsilons = data['epsilons']
+        num_episodes = len(rewards)
+        episodes = np.arange(episode_offset, episode_offset + num_episodes)
+        all_rewards.append((episodes, rewards))
+        all_losses.append((episodes, losses))
+        all_steps.append((episodes, steps))
+        all_epsilons.append((episodes, epsilons))
+        episode_offset += num_episodes
+    return all_rewards, all_losses, all_steps, all_epsilons
+
 
 def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses=True, show_steps=True, show_epsilons=True):
     """
@@ -241,29 +259,8 @@ def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses
         phases (list): Lista de nombres para cada fase (opcional).
     """
     plt.close('all')
-
-    all_rewards = []
-    all_losses = []
-    all_steps = []
-    all_epsilons = []
-    episode_offset = 0
-
-    for path in paths:
-        data = np.load(path)
-        rewards = data['rewards']
-        losses = data['losses']
-        steps = data['steps']
-        epsilons = data['epsilons']
-
-        num_episodes = len(rewards)
-        episodes = np.arange(episode_offset, episode_offset + num_episodes)
-
-        all_rewards.append((episodes, rewards))
-        all_losses.append((episodes, losses))
-        all_steps.append((episodes, steps))
-        all_epsilons.append((episodes, epsilons))
-
-        episode_offset += num_episodes
+    
+    all_rewards, all_losses, all_steps, all_epsilons = collect_metrics(paths)
 
     if show_rewards:
         plt.figure(figsize=(10, 4))
@@ -310,6 +307,129 @@ def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses
             label = phases[idx] if phases and idx < len(phases) else f"Fase {idx+1}"
             plt.plot(episodes, steps, label=label)
         plt.title("Steps por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Steps")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+
+def graph_metrics_comparison(dqn_path, ddqn_path, show_rewards=True, show_losses=True, show_steps=True, show_epsilons=True):
+    """
+    Grafica comparativamente las métricas de entrenamiento (rewards, losses, steps, epsilons)
+    para DQN y DDQN en la misma figura.
+
+    Args:
+        dqn_path (list): Lista de rutas a archivos .npz de DQN.
+        ddqn_path (list): Lista de rutas a archivos .npz de DDQN.
+    """
+    plt.close('all')
+
+    dqn_rewards, dqn_losses, dqn_steps, dqn_epsilons = collect_metrics(dqn_path)
+    ddqn_rewards, ddqn_losses, ddqn_steps, ddqn_epsilons = collect_metrics(ddqn_path)
+
+    # Recompensa
+    if show_rewards:
+        plt.figure(figsize=(12, 5))
+        # Concatenar todas las fases de DQN
+        all_dqn_episodes = []
+        all_dqn_rewards = []
+        for episodes, rewards in dqn_rewards:
+            all_dqn_episodes.extend(episodes)
+            all_dqn_rewards.extend(rewards)
+        plt.plot(all_dqn_episodes, all_dqn_rewards, label='DQN', color='tab:blue', linestyle='-')
+        
+        # Concatenar todas las fases de DDQN
+        all_ddqn_episodes = []
+        all_ddqn_rewards = []
+        for episodes, rewards in ddqn_rewards:
+            all_ddqn_episodes.extend(episodes)
+            all_ddqn_rewards.extend(rewards)
+        plt.plot(all_ddqn_episodes, all_ddqn_rewards, label='DDQN', color='tab:orange', linestyle='--')
+        
+        plt.title("Recompensa por Episodio (DQN vs DDQN)")
+        plt.xlabel("Episodio")
+        plt.ylabel("Recompensa")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    # Epsilon
+    if show_epsilons:
+        plt.figure(figsize=(12, 5))
+        # Concatenar todas las fases de DQN
+        all_dqn_episodes = []
+        all_dqn_epsilons = []
+        for episodes, epsilons in dqn_epsilons:
+            all_dqn_episodes.extend(episodes)
+            all_dqn_epsilons.extend(epsilons)
+        plt.plot(all_dqn_episodes, all_dqn_epsilons, label='DQN', color='tab:blue', linestyle='-')
+        
+        # Concatenar todas las fases de DDQN
+        all_ddqn_episodes = []
+        all_ddqn_epsilons = []
+        for episodes, epsilons in ddqn_epsilons:
+            all_ddqn_episodes.extend(episodes)
+            all_ddqn_epsilons.extend(epsilons)
+        plt.plot(all_ddqn_episodes, all_ddqn_epsilons, label='DDQN', color='tab:orange', linestyle='--')
+        
+        plt.title("Epsilon por Episodio (DQN vs DDQN)")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    # Loss
+    if show_losses:
+        plt.figure(figsize=(12, 5))
+        # Concatenar todas las fases de DQN
+        all_dqn_episodes = []
+        all_dqn_losses = []
+        for episodes, losses in dqn_losses:
+            all_dqn_episodes.extend(episodes)
+            all_dqn_losses.extend(losses)
+        plt.plot(all_dqn_episodes, all_dqn_losses, label='DQN', color='tab:blue', linestyle='-')
+        
+        # Concatenar todas las fases de DDQN
+        all_ddqn_episodes = []
+        all_ddqn_losses = []
+        for episodes, losses in ddqn_losses:
+            all_ddqn_episodes.extend(episodes)
+            all_ddqn_losses.extend(losses)
+        plt.plot(all_ddqn_episodes, all_ddqn_losses, label='DDQN', color='tab:orange', linestyle='--')
+        
+        plt.title("Loss por Episodio (DQN vs DDQN)")
+        plt.xlabel("Episodio")
+        plt.ylabel("Loss")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+        plt.close()
+
+    # Steps
+    if show_steps:
+        plt.figure(figsize=(12, 5))
+        # Concatenar todas las fases de DQN
+        all_dqn_episodes = []
+        all_dqn_steps = []
+        for episodes, steps in dqn_steps:
+            all_dqn_episodes.extend(episodes)
+            all_dqn_steps.extend(steps)
+        plt.plot(all_dqn_episodes, all_dqn_steps, label='DQN', color='tab:blue', linestyle='-')
+        
+        # Concatenar todas las fases de DDQN
+        all_ddqn_episodes = []
+        all_ddqn_steps = []
+        for episodes, steps in ddqn_steps:
+            all_ddqn_episodes.extend(episodes)
+            all_ddqn_steps.extend(steps)
+        plt.plot(all_ddqn_episodes, all_ddqn_steps, label='DDQN', color='tab:orange', linestyle='--')
+        
+        plt.title("Steps por Episodio (DQN vs DDQN)")
         plt.xlabel("Episodio")
         plt.ylabel("Steps")
         plt.grid(True)
