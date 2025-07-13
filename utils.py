@@ -421,8 +421,41 @@ def compare_metrics(metrics_paths, labels=None, show_rewards=True, show_losses=T
     print("\n=== RESUMEN ESTADÍSTICO ===")
     for i, (data, label) in enumerate(zip(all_data, labels)):
         print(f"\n{label}:")
-        print(f"  Recompensa promedio: {np.mean(data['rewards']):.2f} ± {np.std(data['rewards']):.2f}")
-        print(f"  Recompensa máxima: {np.max(data['rewards']):.2f}")
-        print(f"  Loss promedio: {np.mean(data['losses']):.4f} ± {np.std(data['losses']):.4f}")
-        print(f"  Steps promedio: {np.mean(data['steps']):.1f} ± {np.std(data['steps']):.1f}")
-        print(f"  Epsilon final: {data['epsilons'][-1]:.4f}")
+        
+        # Limpiar datos de recompensas (remover nan e inf)
+        rewards_clean = data['rewards'][~np.isnan(data['rewards']) & ~np.isinf(data['rewards'])]
+        if len(rewards_clean) > 0:
+            print(f"  Recompensa promedio: {np.mean(rewards_clean):.2f} ± {np.std(rewards_clean):.2f}")
+            print(f"  Recompensa máxima: {np.max(rewards_clean):.2f}")
+            print(f"  Recompensa mínima: {np.min(rewards_clean):.2f}")
+        else:
+            print(f"  Recompensa promedio: NaN (no hay datos válidos)")
+            print(f"  Recompensa máxima: NaN (no hay datos válidos)")
+        
+        # Limpiar datos de losses
+        losses_clean = data['losses'][~np.isnan(data['losses']) & ~np.isinf(data['losses'])]
+        if len(losses_clean) > 0:
+            print(f"  Loss promedio: {np.mean(losses_clean):.4f} ± {np.std(losses_clean):.4f}")
+        else:
+            print(f"  Loss promedio: NaN (no hay datos válidos)")
+        
+        # Limpiar datos de steps
+        steps_clean = data['steps'][~np.isnan(data['steps']) & ~np.isinf(data['steps'])]
+        if len(steps_clean) > 0:
+            print(f"  Steps promedio: {np.mean(steps_clean):.1f} ± {np.std(steps_clean):.1f}")
+        else:
+            print(f"  Steps promedio: NaN (no hay datos válidos)")
+        
+        # Epsilon final
+        if not np.isnan(data['epsilons'][-1]) and not np.isinf(data['epsilons'][-1]):
+            print(f"  Epsilon final: {data['epsilons'][-1]:.4f}")
+        else:
+            print(f"  Epsilon final: NaN")
+        
+        # Información adicional sobre datos
+        total_episodes = len(data['rewards'])
+        valid_rewards = len(rewards_clean)
+        print(f"  Episodios totales: {total_episodes}")
+        print(f"  Episodios con recompensas válidas: {valid_rewards}")
+        if total_episodes > 0:
+            print(f"  Porcentaje de datos válidos: {(valid_rewards/total_episodes)*100:.1f}%")
