@@ -239,7 +239,9 @@ class Agent(ABC):
         if self.adaptive_epsilon:
             # Combinar epsilon base con el factor adaptativo
             # El adaptativo actúa como un multiplicador o offset
-            epsilon_final = np.clip(epsilon_base * self.adaptive_epsilon_value, self.epsilon_min, self.epsilon_max)
+            epsilon_final = epsilon_base * self.adaptive_epsilon_value
+
+            epsilon_final = min(max(epsilon_final, self.epsilon_f), self.epsilon_i)
             return epsilon_final
         else:
             return epsilon_base

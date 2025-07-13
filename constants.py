@@ -69,9 +69,9 @@ MODEL_PATH = "net_history/GenericDQNAgent.dat"  # Cambiar si se usa timestamp
 PHASE1_MODEL_PATH = "net_history/GenericDQNAgent_phase1.dat" 
 
 # Epsilon adaptativo
-EPSILON_ADAPTIVE_PATIENCE = 20
-EPSILON_ADAPTIVE_INCREASE = 1.1   # multiplicativo
-EPSILON_ADAPTIVE_DECREASE = 0.95  # multiplicativo
+EPSILON_ADAPTIVE_PATIENCE = 40
+EPSILON_ADAPTIVE_INCREASE = 1.05   # multiplicativo
+EPSILON_ADAPTIVE_DECREASE = 0.90  # multiplicativo
 IMPROVEMENT_THRESHOLD = 0.5
 
 
