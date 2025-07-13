@@ -145,7 +145,6 @@ class Agent(ABC):
         action_distribution = [counter.get(i, 0) for i in range(self.env.action_space.n)]
         self.all_actions.append(action_distribution)
 
-   
         reward = np.mean(rewards[-self.episode_block:])
         mean_rewards.append(reward)
 
@@ -241,10 +240,8 @@ class Agent(ABC):
             # Combinar epsilon base con el factor adaptativo
             # El adaptativo actúa como un multiplicador o offset
             epsilon_final = np.clip(epsilon_base * self.adaptive_epsilon_value, self.epsilon_min, self.epsilon_max)
-            print(f"Epsilon final: {epsilon_final}")
             return epsilon_final
         else:
-            print(f"Epsilon base: {epsilon_base}")
             return epsilon_base
         
     
