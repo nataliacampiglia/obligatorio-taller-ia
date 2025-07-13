@@ -28,6 +28,7 @@ class DQNAgent(Agent):
         prioritized_replay_beta=0.4,
         prioritized_replay_beta_increment=0.001,
         prioritized_replay_epsilon=1e-6,
+        adaptive_epsilon=False,
     ):
         super().__init__(
             env,
@@ -80,6 +81,7 @@ class DQNAgent(Agent):
         self.epsilon_anneal_steps = epsilon_anneal_steps
         self.episode_block = episode_block
         self.run_name = run_name
+        self.adaptive_epsilon = adaptive_epsilon
 
     def select_action(self, state, current_steps, train=True):
         # Calcular epsilon según step

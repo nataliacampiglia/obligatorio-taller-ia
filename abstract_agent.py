@@ -9,7 +9,7 @@ from tqdm import tqdm
 import random
 from datetime import datetime
 
-from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT_DIR, DQN_COMMON_MODEL_PATH,
+from constants import (DDQN_NET_HISTORY_DIR, DQN_BREAKPOINT_DIR, DDQN_BREAKPOINT_DIR, DQN_COMMON_MODEL_PATH, EPSILON_ADAPTIVE_PATIENCE, EPSILON_ADAPTIVE_INCREASE, EPSILON_ADAPTIVE_DECREASE, IMPROVEMENT_THRESHOLD,
                     getMetricsDir, getMetricFilePath, getGenericDataFilePath
 )
 
@@ -17,7 +17,7 @@ class Agent(ABC):
     def __init__(self, gym_env, obs_processing_func, memory_buffer_size, batch_size, learning_rate, gamma,
                  epsilon_i, epsilon_f, epsilon_anneal_steps, episode_block, device,  run_name="run", checkpoint_every=150000, load_checkpoint=None,
                  use_prioritized_replay=False, prioritized_replay_alpha=0.6, prioritized_replay_beta=0.4, 
-                 prioritized_replay_beta_increment=0.001, prioritized_replay_epsilon=1e-6):
+                 prioritized_replay_beta_increment=0.001, prioritized_replay_epsilon=1e-6, adaptive_epsilon=False):
         self.device = device
 
         # Funcion phi para procesar los estados.
@@ -56,6 +56,17 @@ class Agent(ABC):
 
         self.total_steps = 0
         self.all_actions = []
+        # Variables de control para la implementación de epsilon adaptativo
+        self.adaptive_epsilon = adaptive_epsilon
+        self.best_reward = -float('inf')
+        self.no_improvement_episodes = 0
+        self.patience = EPSILON_ADAPTIVE_PATIENCE # Numero de episodios sin mejorar antes de aumentar epsilon
+        self.epsilon_increase = EPSILON_ADAPTIVE_INCREASE
+        self.epsilon_decrease = EPSILON_ADAPTIVE_DECREASE
+        self.epsilon_min = self.epsilon_f
+        self.epsilon_max = self.epsilon_i
+        # Epsilon adaptativo como factor multiplicativo (inicialmente 1.0 = sin efecto)
+        self.adaptive_epsilon_value = 1.0
     
     def train(self, number_episodes = 50_000, max_steps_episode = 10_000, max_steps=1_000_000):
       rewards = []
@@ -138,6 +149,30 @@ class Agent(ABC):
         reward = np.mean(rewards[-self.episode_block:])
         mean_rewards.append(reward)
 
+        if self.adaptive_epsilon:
+            improvement_threshold = IMPROVEMENT_THRESHOLD # Mínima mejora para considerarla significativa
+            window = self.episode_block # Ventana de evaluación (ya definida)
+            # Cálculo seguro de promedio de recompensa
+            if len(rewards) >= window:
+                moving_avg = np.mean(rewards[-window:])
+            else:
+                moving_avg = np.mean(rewards)
+
+            if moving_avg > self.best_reward + improvement_threshold:
+                self.best_reward = moving_avg
+                self.no_improvement_episodes = 0
+                old_epsilon = self.adaptive_epsilon_value
+                self.adaptive_epsilon_value = max(self.adaptive_epsilon_value * self.epsilon_decrease, 0.5)
+                if old_epsilon != self.adaptive_epsilon_value:
+                    print(f"[ADAPT-EPS ↓] Epsilon reducido: {old_epsilon:.4f} → {self.adaptive_epsilon_value:.4f} | Mejora: {moving_avg:.2f}")
+            else:
+                self.no_improvement_episodes += 1
+                if self.no_improvement_episodes >= self.patience:
+                    old_epsilon = self.adaptive_epsilon_value
+                    self.adaptive_epsilon_value = min(self.adaptive_epsilon_value * self.epsilon_increase, 2.0)
+                    self.no_improvement_episodes = 0
+                    print(f"[ADAPT-EPS ↑] Epsilon aumentado: {old_epsilon:.4f} → {self.adaptive_epsilon_value:.4f} | Estancado por {self.patience} episodios")
+
         # Registro de métricas y progreso
         rewards.append(current_episode_reward)
         epsilons.append(epsilon)
@@ -196,10 +231,18 @@ class Agent(ABC):
         Compute el valor de epsilon a partir del número de pasos dados hasta ahora.
         """
         if steps_so_far < self.epsilon_anneal_steps:
-            epsilon = self.epsilon_i - (self.epsilon_i - self.epsilon_f) * (steps_so_far / self.epsilon_anneal_steps)
+            epsilon_base = self.epsilon_i - (self.epsilon_i - self.epsilon_f) * (steps_so_far / self.epsilon_anneal_steps)
         else:
-            epsilon = self.epsilon_f
-        return epsilon
+            epsilon_base = self.epsilon_f
+
+        # Si está habilitado el epsilon adaptativo, combinarlo con el base
+        if self.adaptive_epsilon:
+            # Combinar epsilon base con el factor adaptativo
+            # El adaptativo actúa como un multiplicador o offset
+            epsilon_final = max(epsilon_base * self.adaptive_epsilon_value, self.epsilon_min)
+            return epsilon_final
+        else:
+            return epsilon_base
         
     
     def play(self, env, episodes=1):
