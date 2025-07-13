@@ -318,3 +318,111 @@ def graph_metrics_accumulated(paths, phases=None, show_rewards=True, show_losses
         plt.close()
 
     
+def compare_metrics(metrics_paths, labels=None, show_rewards=True, show_losses=True, show_steps=False, show_actions=False, show_epsilons=True):
+    """
+    Compara métricas de entrenamiento entre diferentes fases o agentes.
+    
+    Args:
+        metrics_paths (list): Lista de rutas a los archivos .npz con las métricas
+        labels (list): Lista de etiquetas para cada conjunto de métricas. Si es None, usa los nombres de archivo
+        show_rewards (bool): Si mostrar comparación de recompensas
+        show_losses (bool): Si mostrar comparación de losses
+        show_steps (bool): Si mostrar comparación de steps
+        show_actions (bool): Si mostrar comparación de acciones
+        show_epsilons (bool): Si mostrar comparación de epsilons
+    """
+    if labels is None:
+        labels = [os.path.basename(path).replace('.npz', '') for path in metrics_paths]
+    
+    # Cargar todos los datos
+    all_data = []
+    for path in metrics_paths:
+        data = np.load(path)
+        all_data.append({
+            'rewards': data['rewards'],
+            'losses': data['losses'],
+            'steps': data['steps'],
+            'epsilons': data['epsilons'],
+            'actions': data['actions']
+        })
+    
+    # Recompensas
+    if show_rewards:
+        plt.figure(figsize=(12, 6))
+        for i, (data, label) in enumerate(zip(all_data, labels)):
+            plt.plot(data['rewards'], label=label, alpha=0.8)
+        plt.title("Comparación de Recompensas por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Recompensa")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+    
+    # Epsilon
+    if show_epsilons:
+        plt.figure(figsize=(12, 6))
+        for i, (data, label) in enumerate(zip(all_data, labels)):
+            plt.plot(data['epsilons'], label=label, alpha=0.8)
+        plt.title("Comparación de Epsilon por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Epsilon")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    # Loss
+    if show_losses:
+        plt.figure(figsize=(12, 6))
+        for i, (data, label) in enumerate(zip(all_data, labels)):
+            plt.plot(data['losses'], label=label, alpha=0.8)
+        plt.title("Comparación de Loss por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    # Steps
+    if show_steps:
+        plt.figure(figsize=(12, 6))
+        for i, (data, label) in enumerate(zip(all_data, labels)):
+            plt.plot(data['steps'], label=label, alpha=0.8)
+        plt.title("Comparación de Steps por Episodio")
+        plt.xlabel("Episodio")
+        plt.ylabel("Steps")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    # Actions (promedio de las últimas N épocas para estabilidad)
+    if show_actions:
+        n_episodes = 100  # Últimas 100 épocas para estabilidad
+        action_names = ['NOOP', 'FIRE', 'RIGHT', 'LEFT']
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        axes = axes.flatten()
+        
+        for action_idx in range(4):
+            ax = axes[action_idx]
+            for i, (data, label) in enumerate(zip(all_data, labels)):
+                # Tomar promedio de las últimas n_episodes
+                recent_actions = data['actions'][-n_episodes:, action_idx]
+                avg_action = np.mean(recent_actions)
+                ax.bar(label, avg_action, alpha=0.8, label=label)
+            
+            ax.set_title(f"Promedio {action_names[action_idx]} (últimas {n_episodes} épocas)")
+            ax.set_ylabel("Frecuencia promedio")
+            ax.tick_params(axis='x', rotation=45)
+        
+        plt.tight_layout()
+        plt.show()
+    
+    # Resumen estadístico
+    print("\n=== RESUMEN ESTADÍSTICO ===")
+    for i, (data, label) in enumerate(zip(all_data, labels)):
+        print(f"\n{label}:")
+        print(f"  Recompensa promedio: {np.mean(data['rewards']):.2f} ± {np.std(data['rewards']):.2f}")
+        print(f"  Recompensa máxima: {np.max(data['rewards']):.2f}")
+        print(f"  Loss promedio: {np.mean(data['losses']):.4f} ± {np.std(data['losses']):.4f}")
+        print(f"  Steps promedio: {np.mean(data['steps']):.1f} ± {np.std(data['steps']):.1f}")
+        print(f"  Epsilon final: {data['epsilons'][-1]:.4f}")
