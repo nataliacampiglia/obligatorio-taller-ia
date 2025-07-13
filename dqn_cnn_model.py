@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from simpleAttention import SimpleAttention
 
 def conv2d_output_shape(
     input_size: tuple[int, int],
@@ -89,4 +90,36 @@ class DQN_CNN_Model(nn.Module):
 
         # 4) Capa final sin activación
         q_values = self.out(x)       # Devuelve un Q-value por acción, sin escalamiento
+        return q_values
+
+class DQN_CNN_Model_With_Attention(nn.Module):
+    def __init__(self, obs_shape, n_actions):
+        super(DQN_CNN_Model_With_Attention, self).__init__()
+        
+        # Mismas capas que el modelo original
+        in_channels, h, w = obs_shape
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
+        
+        h1, w1 = conv2d_output_shape((h, w), kernel_size=8, stride=4)
+        h2, w2 = conv2d_output_shape((h1, w1), kernel_size=4, stride=2)
+        flattened_size = 32 * h2 * w2
+        
+        self.fc = nn.Linear(flattened_size, 256)
+        
+        # NUEVA: Capa de atención simple
+        self.attention = SimpleAttention(256)
+        
+        self.out = nn.Linear(256, n_actions)
+        
+    def forward(self, obs):
+        x = F.relu(self.conv1(obs))
+        x = F.relu(self.conv2(x))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc(x))
+        
+        # NUEVO: Aplicar atención
+        x = self.attention(x)
+        
+        q_values = self.out(x)
         return q_values
