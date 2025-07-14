@@ -53,7 +53,7 @@ class DQNAgent(Agent):
         self.optimizer = torch.optim.Adam(
             self.policy_net.parameters(), lr=self.learning_rate
         )
-        # TO TRY: otra funcion de error
+        # TO TRY: otra función de error
         self.loss_fn = nn.MSELoss()
         # Loss function para memoria priorizada (sin reducción)
         self.loss_fn_none = nn.MSELoss(reduction='none')
@@ -73,7 +73,6 @@ class DQNAgent(Agent):
             self.memory = ReplayMemory(memory_buffer_size)
             
         # Almacenar batch_size, gamma y parámetros de epsilon-greedy
-        # TODO no se si se refiere a guardar con "almacenar"
         self.batch_size = batch_size
         self.gamma = gamma
         self.epsilon_i = epsilon_i
@@ -154,9 +153,7 @@ class DQNAgent(Agent):
 
         # 6) Computar loss según el tipo de memoria
         if self.use_prioritized_replay:
-            ### 🔧 MODIFICADO: calcular TD errors sin gradientes
-            with torch.no_grad():  ### ✅ NUEVO
-                # 🔧 MODIFICADO: mover a CPU antes de operar
+            with torch.no_grad():
                 q_target_cpu = q_target.detach().cpu()
                 q_current_cpu = q_current.detach().cpu()
                 td_errors = torch.abs(q_target_cpu - q_current_cpu).numpy().flatten()
@@ -170,8 +167,8 @@ class DQNAgent(Agent):
             self.memory.update_priorities(indices, td_errors)
 
             ### liberar tensores intermedios
-            del td_errors, loss_per_sample, weights  ### ✅ NUEVO
-            torch.cuda.empty_cache()  ### ✅ NUEVO
+            del td_errors, loss_per_sample, weights
+            torch.cuda.empty_cache() 
         else:
             # Loss estándar para memoria regular
             loss = self.loss_fn(q_current, q_target)
