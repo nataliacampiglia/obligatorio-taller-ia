@@ -1,14 +1,9 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import gymnasium
-from gymnasium import ObservationWrapper
-from gymnasium.spaces import Box
 from gymnasium.wrappers import (
     TransformReward,
     RecordVideo,
-    GrayscaleObservation,
-    ResizeObservation,
     FrameStackObservation,
     AtariPreprocessing,
     FrameStackObservation
